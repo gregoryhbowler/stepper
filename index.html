@@ -876,6 +876,25 @@
                 </div>
 
                 <div class="section">
+                    <div class="section-title">SOUND MORPH</div>
+                    <div class="morph-control">
+                        <div class="morph-header">
+                            <div class="morph-title">Current → Random</div>
+                            <div class="morph-buttons">
+                                <button class="morph-btn" id="track-generate-btn">Generate</button>
+                                <button class="morph-btn" id="track-lock-btn">Lock</button>
+                            </div>
+                        </div>
+                        <div class="param">
+                            <div class="param-value">
+                                <input type="range" class="slider" id="track-morph-slider" min="0" max="100" value="0">
+                                <div class="value-display" id="track-morph-value">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
                     <div class="section-title">PARAMETERS</div>
                     <div class="param-group" id="params-container"></div>
                 </div>
@@ -1030,7 +1049,65 @@
                 this.masterGain = this.audioContext.createGain();
                 this.masterGain.connect(this.audioContext.destination);
                 this.masterGain.gain.value = 0.5;
-                this.activeSlides = new Map(); // Track active slide sounds
+                this.activeVoices = new Map(); // Track active voices per track
+                this.scheduledCleanups = new Set(); // Track cleanup timeouts
+            }
+
+            stopVoice(trackId) {
+                if (this.activeVoices.has(trackId)) {
+                    const voice = this.activeVoices.get(trackId);
+                    const now = this.audioContext.currentTime;
+                    
+                    // Quick fade out
+                    if (voice.outputGain && voice.outputGain.gain) {
+                        voice.outputGain.gain.cancelScheduledValues(now);
+                        voice.outputGain.gain.setValueAtTime(voice.outputGain.gain.value, now);
+                        voice.outputGain.gain.linearRampToValueAtTime(0, now + 0.02);
+                    }
+                    
+                    // Stop and disconnect all nodes
+                    setTimeout(() => {
+                        if (voice.oscillators) {
+                            voice.oscillators.forEach(osc => {
+                                try {
+                                    osc.stop();
+                                    osc.disconnect();
+                                } catch(e) {}
+                            });
+                        }
+                        if (voice.sources) {
+                            voice.sources.forEach(src => {
+                                try {
+                                    src.stop();
+                                    src.disconnect();
+                                } catch(e) {}
+                            });
+                        }
+                        if (voice.nodes) {
+                            voice.nodes.forEach(node => {
+                                try {
+                                    node.disconnect();
+                                } catch(e) {}
+                            });
+                        }
+                    }, 30);
+                    
+                    this.activeVoices.delete(trackId);
+                }
+            }
+
+            scheduleCleanup(nodes, stopTime) {
+                const cleanupTime = Math.max(0, (stopTime - this.audioContext.currentTime) * 1000 + 100);
+                const timeoutId = setTimeout(() => {
+                    nodes.forEach(node => {
+                        try {
+                            if (node.stop) node.stop();
+                            node.disconnect();
+                        } catch(e) {}
+                    });
+                    this.scheduledCleanups.delete(timeoutId);
+                }, cleanupTime);
+                this.scheduledCleanups.add(timeoutId);
             }
 
             createReverbImpulse(size = 2) {
@@ -1048,9 +1125,10 @@
                 return impulse;
             }
 
-            applyFX(source, fx) {
-                let current = source;
+            applyFX(voiceInfo, fx) {
+                let current = voiceInfo.output;
                 const now = this.audioContext.currentTime;
+                const fxNodes = [];
                 
                 // Wasp Filter
                 if (fx.waspFilter > 0) {
@@ -1091,6 +1169,7 @@
                     current.connect(waspDry);
                     waspDry.connect(waspMerger);
                     
+                    fxNodes.push(preDrive, filter1, filter2, filter3, filter4, waspWet, waspDry, waspMerger);
                     current = waspMerger;
                 }
                 
@@ -1105,6 +1184,7 @@
                     driveNode.curve = curve;
                     
                     current.connect(driveNode);
+                    fxNodes.push(driveNode);
                     current = driveNode;
                 }
                 
@@ -1125,6 +1205,7 @@
                     
                     current.connect(distNode);
                     distNode.connect(distGain);
+                    fxNodes.push(distNode, distGain);
                     current = distGain;
                 }
                 
@@ -1163,6 +1244,7 @@
                     current.connect(resDry);
                     resDry.connect(resMerger);
                     
+                    fxNodes.push(resDelay, resFilter, resFeedback, resWet, resDry, resMerger);
                     current = resMerger;
                 }
                 
@@ -1186,6 +1268,7 @@
                     delayGain.connect(merger);
                     
                     current.connect(merger);
+                    fxNodes.push(delayNode, feedback, delayGain, merger);
                     current = merger;
                 }
                 
@@ -1209,6 +1292,7 @@
                     current.connect(dryGain);
                     dryGain.connect(merger);
                     
+                    fxNodes.push(reverbNode, reverbGain, dryGain, merger);
                     current = merger;
                 }
                 
@@ -1229,10 +1313,11 @@
                     }
                     
                     current.connect(glitchGain);
+                    fxNodes.push(glitchGain);
                     current = glitchGain;
                 }
                 
-                return current;
+                return { output: current, fxNodes };
             }
 
             create808Kick(params) {
@@ -1245,6 +1330,9 @@
                 const gain = this.audioContext.createGain();
                 const subGain = this.audioContext.createGain();
                 const merger = this.audioContext.createGain();
+                
+                const oscillators = [osc, subOsc];
+                const nodes = [gain, subGain, merger];
                 
                 const startFreq = 150 * pitch;
                 const endFreq = 40 * pitch;
@@ -1265,6 +1353,8 @@
                     clickGain.connect(merger);
                     clickOsc.start(now);
                     clickOsc.stop(now + 0.02);
+                    oscillators.push(clickOsc);
+                    nodes.push(clickGain);
                 }
                 
                 const driveNode = this.audioContext.createWaveShaper();
@@ -1274,6 +1364,7 @@
                     curve[i] = Math.tanh(x * drive) * 0.8;
                 }
                 driveNode.curve = curve;
+                nodes.push(driveNode);
                 
                 gain.gain.setValueAtTime(0, now);
                 gain.gain.linearRampToValueAtTime(1, now + attack);
@@ -1291,10 +1382,11 @@
                 
                 osc.start(now);
                 subOsc.start(now);
-                osc.stop(now + decay + 0.1);
-                subOsc.stop(now + decay + 0.1);
+                const stopTime = now + decay + 0.1;
+                osc.stop(stopTime);
+                subOsc.stop(stopTime);
                 
-                return merger;
+                return { output: merger, oscillators, nodes, stopTime };
             }
 
             createFMDrum(params) {
@@ -1307,6 +1399,9 @@
                 const modGain = this.audioContext.createGain();
                 const gain = this.audioContext.createGain();
                 const output = this.audioContext.createGain();
+                
+                const oscillators = [carrier, modulator];
+                const nodes = [modGain, gain, output];
                 
                 carrier.frequency.value = pitch;
                 modulator.frequency.value = pitch * fmRatio;
@@ -1323,6 +1418,7 @@
                     filter.Q.value = filterQ;
                     carrier.connect(filter);
                     filter.connect(gain);
+                    nodes.push(filter);
                 } else {
                     carrier.connect(gain);
                 }
@@ -1337,10 +1433,11 @@
                 
                 carrier.start(now);
                 modulator.start(now);
-                carrier.stop(now + Math.max(decay, fmDecay) + 0.1);
-                modulator.stop(now + Math.max(decay, fmDecay) + 0.1);
+                const stopTime = now + Math.max(decay, fmDecay) + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
                 
-                return output;
+                return { output, oscillators, nodes, stopTime };
             }
 
             createSnareDrum(params) {
@@ -1349,11 +1446,17 @@
                         noiseAmount = 0.65, noiseDecay = 0.12, snap = 1.5, tone = 1.2 } = params;
                 
                 const merger = this.audioContext.createGain();
+                const oscillators = [];
+                const sources = [];
+                const nodes = [merger];
                 
                 const carrier = this.audioContext.createOscillator();
                 const modulator = this.audioContext.createOscillator();
                 const modGain = this.audioContext.createGain();
                 const toneGain = this.audioContext.createGain();
+                
+                oscillators.push(carrier, modulator);
+                nodes.push(modGain, toneGain);
                 
                 carrier.frequency.value = pitch;
                 modulator.frequency.value = pitch * fmRatio;
@@ -1370,6 +1473,8 @@
                 toneGain.gain.linearRampToValueAtTime(0.6 * (1 - noiseAmount), now + 0.001);
                 toneGain.gain.exponentialRampToValueAtTime(0.01, now + toneDecay);
                 
+                let maxStopTime = toneDecay;
+                
                 if (noiseAmount > 0) {
                     const bufferSize = this.audioContext.sampleRate * 2;
                     const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
@@ -1380,6 +1485,7 @@
                     
                     const noise = this.audioContext.createBufferSource();
                     noise.buffer = buffer;
+                    sources.push(noise);
                     
                     const noiseFilter = this.audioContext.createBiquadFilter();
                     noiseFilter.type = 'highpass';
@@ -1387,6 +1493,8 @@
                     noiseFilter.Q.value = snap * 3;
                     
                     const noiseGain = this.audioContext.createGain();
+                    
+                    nodes.push(noiseFilter, noiseGain);
                     
                     noise.connect(noiseFilter);
                     noiseFilter.connect(noiseGain);
@@ -1398,16 +1506,18 @@
                     noiseGain.connect(merger);
                     noise.start(now);
                     noise.stop(now + noiseDecay + 0.1);
+                    maxStopTime = Math.max(maxStopTime, noiseDecay);
                 }
                 
                 toneGain.connect(merger);
                 
                 carrier.start(now);
                 modulator.start(now);
-                carrier.stop(now + toneDecay + 0.1);
-                modulator.stop(now + toneDecay + 0.1);
+                const stopTime = now + maxStopTime + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
                 
-                return merger;
+                return { output: merger, oscillators, sources, nodes, stopTime };
             }
 
             createNoiseDrum(params) {
@@ -1430,8 +1540,10 @@
                 const noise = this.audioContext.createBufferSource();
                 noise.buffer = buffer;
                 
+                const sources = [noise];
                 const gain = this.audioContext.createGain();
                 const outputGain = this.audioContext.createGain();
+                const nodes = [gain, outputGain];
                 
                 if (tone > 0 || spread > 0) {
                     const filter = this.audioContext.createBiquadFilter();
@@ -1440,6 +1552,7 @@
                     filter.frequency.value = Math.min(20000, Math.max(100, 4000 * tone));
                     filter.Q.value = spread;
                     
+                    nodes.push(filter);
                     noise.connect(filter);
                     filter.connect(gain);
                 } else {
@@ -1458,9 +1571,10 @@
                 }
                 
                 noise.start(now);
-                noise.stop(now + decay + 0.1);
+                const stopTime = now + decay + 0.1;
+                noise.stop(stopTime);
                 
-                return outputGain;
+                return { output: outputGain, sources, nodes, stopTime };
             }
 
             createModalDrum(params) {
@@ -1475,10 +1589,17 @@
                 
                 const masterGain = this.audioContext.createGain();
                 const output = this.audioContext.createGain();
+                const oscillators = [];
+                const nodes = [masterGain, output];
+                
+                let maxStopTime = 0;
                 
                 ratios.forEach((ratio, i) => {
                     const osc = this.audioContext.createOscillator();
                     const gain = this.audioContext.createGain();
+                    
+                    oscillators.push(osc);
+                    nodes.push(gain);
                     
                     osc.frequency.value = pitch * ratio;
                     osc.type = 'sine';
@@ -1494,7 +1615,9 @@
                     gain.connect(masterGain);
                     
                     osc.start(now);
-                    osc.stop(now + partialDecay + 0.1);
+                    const stopTime = now + partialDecay + 0.1;
+                    osc.stop(stopTime);
+                    maxStopTime = Math.max(maxStopTime, stopTime);
                 });
                 
                 if (tone > 0) {
@@ -1503,13 +1626,14 @@
                     filter.frequency.value = Math.min(20000, Math.max(100, 4000 * tone));
                     filter.Q.value = resonance;
                     
+                    nodes.push(filter);
                     masterGain.connect(filter);
                     filter.connect(output);
                 } else {
                     masterGain.connect(output);
                 }
                 
-                return output;
+                return { output, oscillators, nodes, stopTime: maxStopTime };
             }
 
             createPhysicalDrum(params) {
@@ -1527,10 +1651,17 @@
                 
                 const masterGain = this.audioContext.createGain();
                 const output = this.audioContext.createGain();
+                const oscillators = [];
+                const nodes = [masterGain, output];
+                
+                let maxStopTime = 0;
                 
                 modes.forEach((mode, i) => {
                     const osc = this.audioContext.createOscillator();
                     const gain = this.audioContext.createGain();
+                    
+                    oscillators.push(osc);
+                    nodes.push(gain);
                     
                     const freq = pitch * mode.ratio * Math.max(0.1, tension);
                     osc.frequency.value = freq;
@@ -1547,7 +1678,9 @@
                     gain.connect(masterGain);
                     
                     osc.start(now);
-                    osc.stop(now + partialDecay + 0.1);
+                    const stopTime = now + partialDecay + 0.1;
+                    osc.stop(stopTime);
+                    maxStopTime = Math.max(maxStopTime, stopTime);
                 });
                 
                 const filter = this.audioContext.createBiquadFilter();
@@ -1555,13 +1688,22 @@
                 filter.frequency.value = Math.min(20000, Math.max(100, 3000 + resonance * 500));
                 filter.Q.value = resonance * 0.8;
                 
+                nodes.push(filter);
                 masterGain.connect(filter);
                 filter.connect(output);
                 
-                return output;
+                return { output, oscillators, nodes, stopTime: maxStopTime };
             }
 
-            playDrum(engine, params, fx, velocity = 1) {
+            playDrum(trackId, engine, params, fx, velocity = 1) {
+                // Stop any existing voice on this track for monophonic behavior
+                if (!trackId || trackId === 'test') {
+                    // For testing/triggering sounds, use polyphonic behavior
+                    trackId = 'test_' + Date.now();
+                } else {
+                    this.stopVoice(trackId);
+                }
+
                 const engineMap = {
                     '808': () => this.create808Kick(params),
                     'FM': () => this.createFMDrum(params),
@@ -1573,76 +1715,38 @@
 
                 const createEngine = engineMap[engine];
                 if (createEngine) {
-                    const source = createEngine();
-                    const withFX = this.applyFX(source, fx);
+                    const voiceInfo = createEngine();
+                    const fxInfo = this.applyFX(voiceInfo, fx);
                     
                     // Apply velocity
                     const velocityGain = this.audioContext.createGain();
                     velocityGain.gain.value = velocity;
-                    withFX.connect(velocityGain);
+                    fxInfo.output.connect(velocityGain);
                     velocityGain.connect(this.masterGain);
-                }
-            }
-
-            // Play a slide sound that morphs from start to end params over duration
-            playSlide(trackId, engine, startParams, endParams, startFX, endFX, duration, velocity = 1) {
-                // Cancel any existing slide for this track
-                if (this.activeSlides.has(trackId)) {
-                    this.activeSlides.get(trackId).forEach(node => {
-                        try { node.disconnect(); } catch(e) {}
+                    
+                    // Collect all nodes for cleanup
+                    const allNodes = [
+                        ...(voiceInfo.nodes || []),
+                        ...(fxInfo.fxNodes || []),
+                        velocityGain
+                    ];
+                    
+                    // Store voice info for monophonic management
+                    this.activeVoices.set(trackId, {
+                        oscillators: voiceInfo.oscillators,
+                        sources: voiceInfo.sources,
+                        nodes: allNodes,
+                        outputGain: velocityGain
                     });
-                }
-
-                const now = this.audioContext.currentTime;
-                const nodes = [];
-                
-                // Create a continuous oscillator-based sound that we can morph
-                const engineMap = {
-                    '808': () => this.create808Kick(startParams),
-                    'FM': () => this.createFMDrum(startParams),
-                    'Snare': () => this.createSnareDrum(startParams),
-                    'Noise': () => this.createNoiseDrum(startParams),
-                    'Modal': () => this.createModalDrum(startParams),
-                    'Physical': () => this.createPhysicalDrum(startParams)
-                };
-
-                const createEngine = engineMap[engine];
-                if (createEngine) {
-                    const source = createEngine();
-                    const withFX = this.applyFX(source, startFX);
                     
-                    // Apply velocity and create envelope for the slide
-                    const velocityGain = this.audioContext.createGain();
-                    const slideEnvelope = this.audioContext.createGain();
+                    // Schedule cleanup
+                    this.scheduleCleanup(allNodes, voiceInfo.stopTime);
                     
-                    velocityGain.gain.value = velocity;
-                    
-                    // Smooth decay over the slide duration
-                    slideEnvelope.gain.setValueAtTime(1, now);
-                    slideEnvelope.gain.exponentialRampToValueAtTime(0.1, now + duration);
-                    
-                    withFX.connect(velocityGain);
-                    velocityGain.connect(slideEnvelope);
-                    slideEnvelope.connect(this.masterGain);
-                    
-                    nodes.push(withFX, velocityGain, slideEnvelope);
-                    
-                    this.activeSlides.set(trackId, nodes);
-                    
-                    // Clean up after duration
+                    // Remove from active voices after it's done
+                    const cleanupDelay = Math.max(0, (voiceInfo.stopTime - this.audioContext.currentTime) * 1000 + 50);
                     setTimeout(() => {
-                        this.activeSlides.delete(trackId);
-                    }, duration * 1000 + 100);
-                }
-            }
-
-            stopSlide(trackId) {
-                if (this.activeSlides.has(trackId)) {
-                    const nodes = this.activeSlides.get(trackId);
-                    nodes.forEach(node => {
-                        try { node.disconnect(); } catch(e) {}
-                    });
-                    this.activeSlides.delete(trackId);
+                        this.activeVoices.delete(trackId);
+                    }, cleanupDelay);
                 }
             }
         }
@@ -1671,7 +1775,8 @@
                     params: {},
                     fx: {},
                     normalState: null,
-                    targetParams: null
+                    targetParams: null,
+                    morphAmount: 0
                 },
                 snare: {
                     name: 'SNARE',
@@ -1685,7 +1790,8 @@
                     params: {},
                     fx: {},
                     normalState: null,
-                    targetParams: null
+                    targetParams: null,
+                    morphAmount: 0
                 },
                 hihat: {
                     name: 'HI-HAT',
@@ -1699,7 +1805,8 @@
                     params: {},
                     fx: {},
                     normalState: null,
-                    targetParams: null
+                    targetParams: null,
+                    morphAmount: 0
                 },
                 tom: {
                     name: 'TOM',
@@ -1713,7 +1820,8 @@
                     params: {},
                     fx: {},
                     normalState: null,
-                    targetParams: null
+                    targetParams: null,
+                    morphAmount: 0
                 },
                 perc: {
                     name: 'PERC',
@@ -1727,7 +1835,8 @@
                     params: {},
                     fx: {},
                     normalState: null,
-                    targetParams: null
+                    targetParams: null,
+                    morphAmount: 0
                 },
                 cymbal: {
                     name: 'CYMBAL',
@@ -1741,7 +1850,8 @@
                     params: {},
                     fx: {},
                     normalState: null,
-                    targetParams: null
+                    targetParams: null,
+                    morphAmount: 0
                 }
             }
         };
@@ -1854,7 +1964,7 @@
         }
 
         function getMorphedState(track) {
-            if (!track.targetParams || state.globalMorphAmount === 0) {
+            if (!track.targetParams || track.morphAmount === 0) {
                 return {
                     engine: track.engine,
                     params: { ...track.params },
@@ -1862,7 +1972,7 @@
                 };
             }
             
-            const t = state.globalMorphAmount / 100;
+            const t = track.morphAmount / 100;
             const morphedParams = {};
             const morphedFX = {};
             
@@ -2149,6 +2259,10 @@
             const title = `${selectedTrack.name} — ${ENGINE_SPECS[selectedTrack.engine].name}${indicator}`;
             document.getElementById('synth-title').textContent = title;
             
+            // Update track morph slider
+            document.getElementById('track-morph-slider').value = selectedTrack.morphAmount;
+            document.getElementById('track-morph-value').textContent = selectedTrack.morphAmount.toFixed(0) + '%';
+            
             renderEngineSelect();
             renderParams();
             renderFX();
@@ -2173,8 +2287,9 @@
             const selectedTrack = state.tracks[state.selectedTrack];
             const engineSpec = ENGINE_SPECS[selectedTrack.engine];
             
-            // Always display current working params (track.params), not normal state
-            const displayParams = selectedTrack.params;
+            // Get morphed state if there's a target
+            const morphedState = getMorphedState(selectedTrack);
+            const displayParams = morphedState.params;
             
             const container = document.getElementById('params-container');
             container.innerHTML = '';
@@ -2223,8 +2338,9 @@
             
             const selectedTrack = state.tracks[state.selectedTrack];
             
-            // Always display current working FX (track.fx), not normal state
-            const displayFX = selectedTrack.fx;
+            // Get morphed state if there's a target
+            const morphedState = getMorphedState(selectedTrack);
+            const displayFX = morphedState.fx;
 
             Object.entries(FX_SPECS).forEach(([key, spec]) => {
                 const paramDiv = document.createElement('div');
@@ -2283,6 +2399,17 @@
             document.getElementById('set-normal-btn').onclick = setNormalButtonClick;
             document.getElementById('recall-normal-btn').onclick = recallNormalState;
             document.getElementById('trigger-btn').onclick = triggerSound;
+            
+            // Track morph
+            document.getElementById('track-generate-btn').onclick = generateTrackTarget;
+            document.getElementById('track-lock-btn').onclick = lockTrackTarget;
+            document.getElementById('track-morph-slider').oninput = (e) => {
+                const track = state.tracks[state.selectedTrack];
+                track.morphAmount = parseFloat(e.target.value);
+                document.getElementById('track-morph-value').textContent = track.morphAmount.toFixed(0) + '%';
+                renderParams();
+                renderFX();
+            };
             
             // Global morph
             document.getElementById('global-generate-btn').onclick = generateGlobalTarget;
@@ -2346,23 +2473,20 @@
                         const currentLock = track.stepLocks[state.currentStep];
                         
                         if (currentLock) {
-                            // P-locked step - use locked values as base
                             baseEngine = currentLock.engine;
                             baseParams = currentLock.params;
                             baseFX = currentLock.fx;
                         } else if (track.normalState) {
-                            // No P-lock - use Set Normal as base
                             baseEngine = track.normalState.engine;
                             baseParams = track.normalState.params;
                             baseFX = track.normalState.fx;
                         } else {
-                            // Fallback to current working state
                             baseEngine = track.engine;
                             baseParams = track.params;
                             baseFX = track.fx;
                         }
                         
-                        // Check if S-Mode (slide) is enabled
+                        // Check if slide is enabled
                         const slideEnabled = track.stepSlides[state.currentStep];
                         
                         if (slideEnabled) {
@@ -2379,10 +2503,10 @@
                             }
                             
                             if (nextActiveStep !== null) {
-                                // Calculate slide duration in seconds
-                                const slideDuration = (stepsToNext * stepDuration) / 1000;
+                                // Calculate slide duration
+                                const slideDurationSeconds = (stepsToNext * stepDuration) / 1000;
                                 
-                                // Get the TARGET sound (next step's sound)
+                                // Get target sound
                                 let targetEngine, targetParams, targetFX;
                                 const nextLock = track.stepLocks[nextActiveStep];
                                 
@@ -2400,18 +2524,35 @@
                                     targetFX = track.fx;
                                 }
                                 
-                                // Play initial sound and then slide to target
-                                audioEngine.playDrum(baseEngine, baseParams, baseFX, velocity);
+                                // Create modified params for slide - extend decay and morph pitch
+                                const slideParams = { ...baseParams };
                                 
-                                // Start a slide that will morph toward the target
-                                audioEngine.playSlide(trackId, baseEngine, baseParams, targetParams, baseFX, targetFX, slideDuration, velocity * 0.3);
+                                // For engines with pitch, morph toward target pitch
+                                if (slideParams.pitch !== undefined && targetParams.pitch !== undefined) {
+                                    // We'll use automation to morph the pitch
+                                    // For now, start at base pitch
+                                }
+                                
+                                // Extend the decay to last until the next step
+                                if (slideParams.decay !== undefined) {
+                                    slideParams.decay = Math.max(slideParams.decay, slideDurationSeconds);
+                                }
+                                if (slideParams.toneDecay !== undefined) {
+                                    slideParams.toneDecay = Math.max(slideParams.toneDecay, slideDurationSeconds);
+                                }
+                                if (slideParams.noiseDecay !== undefined) {
+                                    slideParams.noiseDecay = Math.max(slideParams.noiseDecay, slideDurationSeconds * 0.8);
+                                }
+                                
+                                // Play the sound with extended decay
+                                audioEngine.playDrum(trackId, baseEngine, slideParams, baseFX, velocity);
                             } else {
-                                // No next step found, just play the sound normally
-                                audioEngine.playDrum(baseEngine, baseParams, baseFX, velocity);
+                                // No next step, just play normally
+                                audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
                             }
                         } else {
-                            // No slide - just play the sound directly
-                            audioEngine.playDrum(baseEngine, baseParams, baseFX, velocity);
+                            // No slide - play normally (this will cut off any previous sound)
+                            audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
                         }
                     }
                 });
@@ -2431,9 +2572,9 @@
                 sequencerInterval = null;
             }
             
-            // Stop all active slides
+            // Stop all active voices
             Object.keys(state.tracks).forEach(trackId => {
-                audioEngine.stopSlide(trackId);
+                audioEngine.stopVoice(trackId);
             });
             
             document.querySelectorAll('.step').forEach(step => {
@@ -2556,11 +2697,27 @@
         function updateParam(key, value) {
             const track = state.tracks[state.selectedTrack];
             track.params[key] = value;
+            
+            // Reset morph when manually editing
+            if (track.morphAmount > 0) {
+                track.morphAmount = 0;
+                track.targetParams = null;
+                document.getElementById('track-morph-slider').value = 0;
+                document.getElementById('track-morph-value').textContent = '0%';
+            }
         }
 
         function updateFX(key, value) {
             const track = state.tracks[state.selectedTrack];
             track.fx[key] = value;
+            
+            // Reset morph when manually editing
+            if (track.morphAmount > 0) {
+                track.morphAmount = 0;
+                track.targetParams = null;
+                document.getElementById('track-morph-slider').value = 0;
+                document.getElementById('track-morph-value').textContent = '0%';
+            }
         }
 
         function clearAllLocks() {
@@ -2594,6 +2751,48 @@
             state.globalMorphAmount = 0;
             document.getElementById('global-morph-slider').value = 0;
             document.getElementById('global-morph-value').textContent = '0%';
+            
+            renderParams();
+            renderFX();
+        }
+
+        function generateTrackTarget() {
+            const track = state.tracks[state.selectedTrack];
+            track.targetParams = {
+                engine: track.engine,
+                params: generateRandomParams(track.engine),
+                fx: generateRandomFX()
+            };
+            
+            // Visual feedback
+            const btn = document.getElementById('track-generate-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'GENERATED!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 300);
+        }
+
+        function lockTrackTarget() {
+            const track = state.tracks[state.selectedTrack];
+            if (track.targetParams) {
+                const morphed = getMorphedState(track);
+                track.params = { ...morphed.params };
+                track.fx = { ...morphed.fx };
+                track.targetParams = null;
+            }
+            
+            track.morphAmount = 0;
+            document.getElementById('track-morph-slider').value = 0;
+            document.getElementById('track-morph-value').textContent = '0%';
+            
+            // Visual feedback
+            const btn = document.getElementById('track-lock-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'LOCKED!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 300);
             
             renderParams();
             renderFX();
@@ -2635,14 +2834,16 @@
 
         function testSound() {
             const track = state.tracks[state.selectedTrack];
-            // Play current working state (what you're editing)
-            audioEngine.playDrum(track.engine, track.params, track.fx, 0.8);
+            const morphedState = getMorphedState(track);
+            // Play morphed state (what you're hearing with the sliders)
+            audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
         }
 
         function triggerSound() {
             const track = state.tracks[state.selectedTrack];
-            // Play current working state (what you're editing)
-            audioEngine.playDrum(track.engine, track.params, track.fx, 0.8);
+            const morphedState = getMorphedState(track);
+            // Play morphed state (what you're hearing with the sliders)
+            audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
             
             // Visual feedback
             const btn = document.getElementById('trigger-btn');
