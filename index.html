@@ -126,6 +126,7 @@
             gap: 20px;
             flex: 1;
             overflow: hidden;
+            position: relative;
         }
 
         .tracks-panel {
@@ -135,6 +136,205 @@
             gap: 12px;
             overflow-y: auto;
             padding-right: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .view-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: #4a9eff;
+            border: none;
+            color: #000;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+            transition: all 0.2s;
+        }
+
+        .view-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .app {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 0;
+            }
+
+            .title {
+                font-size: 10px;
+            }
+
+            .transport {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+
+            .btn {
+                padding: 10px 16px;
+                font-size: 10px;
+            }
+
+            .tempo input {
+                width: 60px;
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .bar-indicator {
+                padding: 10px;
+                font-size: 10px;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .tracks-panel {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: #0a0a0a;
+                z-index: 1;
+                padding: 10px;
+                transform: translateX(0);
+            }
+
+            .tracks-panel.hidden {
+                transform: translateX(-100%);
+            }
+
+            .side-panel {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                background: #0a0a0a;
+                z-index: 2;
+                padding: 15px;
+                transform: translateX(100%);
+            }
+
+            .side-panel.visible {
+                transform: translateX(0);
+            }
+
+            .view-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .back-btn {
+                display: flex !important;
+            }
+
+            .track {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .track-header {
+                min-width: auto;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .sequencer {
+                flex-direction: row;
+                gap: 3px;
+                overflow-x: auto;
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .step-container {
+                flex-direction: column;
+                gap: 3px;
+                min-width: 40px;
+            }
+
+            .step {
+                min-height: 50px;
+                width: 40px;
+            }
+
+            .step-condition {
+                min-width: auto;
+                width: 40px;
+                font-size: 8px;
+                padding: 3px 2px;
+            }
+
+            .sequencer::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .sequencer::-webkit-scrollbar-track {
+                background: #0a0a0a;
+                border-radius: 3px;
+            }
+
+            .sequencer::-webkit-scrollbar-thumb {
+                background: #4a9eff;
+                border-radius: 3px;
+            }
+
+            .section-title {
+                font-size: 9px;
+            }
+
+            .param-label {
+                font-size: 9px;
+            }
+
+            .value-display {
+                font-size: 10px;
+                min-width: 40px;
+            }
+
+            .engine-select {
+                gap: 6px;
+            }
+
+            .engine-btn {
+                padding: 6px 10px;
+                font-size: 9px;
+            }
+
+            .fx-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                max-width: 90%;
+                padding: 20px;
+            }
+
+            .condition-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         .track {
@@ -299,9 +499,65 @@
             color: #666;
             border-bottom: 1px solid #252525;
             padding-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 32px 1fr auto;
+            gap: 10px;
             align-items: center;
+        }
+
+        .section-title > span {
+            text-align: left;
+        }
+
+        .back-btn {
+            display: none;
+            width: 32px;
+            height: 32px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 3px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #4a9eff;
+            transition: all 0.2s;
+            padding: 0;
+        }
+
+        .back-btn:hover {
+            border-color: #4a9eff;
+            background: #252525;
+        }
+
+        @media (min-width: 769px) {
+            .section-title {
+                grid-template-columns: 1fr auto;
+            }
+            
+            .back-btn {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .back-btn {
+                display: flex;
+            }
+
+            .sequencer::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .sequencer::-webkit-scrollbar-track {
+                background: #0a0a0a;
+                border-radius: 3px;
+            }
+
+            .sequencer::-webkit-scrollbar-thumb {
+                background: #4a9eff;
+                border-radius: 3px;
+            }
         }
 
         .param-group {
@@ -548,11 +804,12 @@
         <div class="main-content">
             <div class="tracks-panel" id="tracks-panel"></div>
 
-            <div class="side-panel">
+            <div class="side-panel" id="side-panel">
                 <div class="section">
                     <div class="section-title">
-                        <span id="synth-title">SYNTHESIS</span>
-                        <button class="btn secondary" id="param-lock-btn" style="padding: 6px 12px; font-size: 9px;">P.LOCK MODE</button>
+                        <button class="back-btn" id="back-btn" style="grid-column: 1;">←</button>
+                        <span id="synth-title" style="grid-column: 2;">SYNTHESIS</span>
+                        <button class="btn secondary" id="param-lock-btn" style="padding: 6px 12px; font-size: 9px; grid-column: 3;">P.LOCK MODE</button>
                     </div>
                     
                     <div class="param-group">
@@ -564,12 +821,16 @@
                 </div>
 
                 <div class="section">
-                    <div class="section-title">FX CHAIN</div>
+                    <div class="section-title">
+                        <span style="grid-column: 1 / -1;">FX CHAIN</span>
+                    </div>
                     <div class="fx-controls" id="fx-container"></div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">MORPH</div>
+                    <div class="section-title">
+                        <span style="grid-column: 1 / -1;">MORPH</span>
+                    </div>
                     <div class="morph-control">
                         <div class="morph-header">
                             <div class="morph-title">Current → Random</div>
@@ -588,7 +849,9 @@
                 </div>
 
                 <div class="section">
-                    <div class="section-title">QUICK ACTIONS</div>
+                    <div class="section-title">
+                        <span style="grid-column: 1 / -1;">QUICK ACTIONS</span>
+                    </div>
                     <div class="param-group">
                         <button class="btn" id="randomize-pattern-btn">Randomize Pattern</button>
                         <button class="btn secondary" id="test-sound-btn">Test Sound</button>
@@ -597,6 +860,8 @@
                 </div>
             </div>
         </div>
+
+        <button class="view-toggle" id="view-toggle">⚙</button>
     </div>
 
     <div class="modal" id="condition-modal">
@@ -1700,12 +1965,42 @@
                 renderParams();
             };
             
+            // Mobile view toggle
+            document.getElementById('view-toggle').onclick = toggleMobileView;
+            document.getElementById('back-btn').onclick = () => {
+                if (window.innerWidth <= 768 && mobileViewState === 'params') {
+                    toggleMobileView();
+                }
+            };
+            
             // Modal
             document.getElementById('condition-modal').onclick = (e) => {
                 if (e.target.id === 'condition-modal') {
                     closeConditionModal();
                 }
             };
+        }
+
+        let mobileViewState = 'sequencer'; // 'sequencer' or 'params'
+
+        function toggleMobileView() {
+            const tracksPanel = document.getElementById('tracks-panel');
+            const sidePanel = document.getElementById('side-panel');
+            const toggleBtn = document.getElementById('view-toggle');
+            
+            if (mobileViewState === 'sequencer') {
+                // Show params
+                tracksPanel.classList.add('hidden');
+                sidePanel.classList.add('visible');
+                toggleBtn.textContent = '◀';
+                mobileViewState = 'params';
+            } else {
+                // Show sequencer
+                tracksPanel.classList.remove('hidden');
+                sidePanel.classList.remove('visible');
+                toggleBtn.textContent = '⚙';
+                mobileViewState = 'sequencer';
+            }
         }
 
         function togglePlay() {
@@ -1783,6 +2078,18 @@
             document.getElementById('param-lock-btn').classList.remove('active');
             renderTracks();
             renderSidebar();
+            
+            // On mobile, automatically show params when selecting a track
+            if (window.innerWidth <= 768) {
+                const tracksPanel = document.getElementById('tracks-panel');
+                const sidePanel = document.getElementById('side-panel');
+                const toggleBtn = document.getElementById('view-toggle');
+                
+                tracksPanel.classList.add('hidden');
+                sidePanel.classList.add('visible');
+                toggleBtn.textContent = '◀';
+                mobileViewState = 'params';
+            }
         }
 
         function toggleStep(trackId, stepIndex) {
