@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>stepper</title>
+    <title>stepper enhanced</title>
     <style>
         * {
             margin: 0;
@@ -94,10 +94,12 @@
             color: #000;
         }
 
+        /* Tempo Knob */
         .tempo {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .tempo-label {
@@ -106,15 +108,49 @@
             font-weight: 600;
         }
 
-        .tempo input {
-            width: 80px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: #e0e0e0;
-            padding: 12px;
-            border-radius: 4px;
+        .tempo-knob-container {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .tempo-knob {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #1a1a1a);
+            border: 2px solid #333;
+            position: relative;
+            cursor: grab;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .tempo-knob:active {
+            cursor: grabbing;
+        }
+
+        .tempo-knob::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 20px;
+            background: #4a9eff;
+            border-radius: 2px;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 8px #4a9eff;
+        }
+
+        .tempo-value {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
             font-size: 14px;
             font-weight: 600;
+            color: #4a9eff;
+            white-space: nowrap;
         }
 
         .bar-indicator {
@@ -125,6 +161,261 @@
             background: #1a1a1a;
             border: 1px solid #333;
             border-radius: 4px;
+        }
+
+        /* Pattern Sequencer */
+        .pattern-sequencer-panel {
+            background: #151515;
+            border: 1px solid #252525;
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pattern-sequencer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #252525;
+        }
+
+        .pattern-sequencer-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .pattern-sequencer-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pattern-mode-select {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        #pattern-seq-toggle.active {
+            background: #ffffff;
+            border-color: #ffffff;
+            color: #000;
+        }
+
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+        }
+
+        .pattern-cell {
+            background: #1a1a1a;
+            border: 1px solid #252525;
+            border-radius: 4px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .pattern-cell:hover {
+            border-color: #444;
+        }
+
+        .pattern-cell.active {
+            border-color: #4a9eff;
+            box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
+        }
+
+        .pattern-cell.selected {
+            border-color: #ffd700;
+            background: #2a2510;
+        }
+
+        .pattern-cell.has-data {
+            background: #1f1f1f;
+            border-color: #333;
+        }
+
+        .pattern-cell.selected.has-data {
+            background: #2a2510;
+            border-color: #ffd700;
+        }
+
+        .pattern-cell-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pattern-number {
+            font-size: 10px;
+            font-weight: 700;
+            color: #666;
+            letter-spacing: 1px;
+        }
+
+        .pattern-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pattern-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #333;
+        }
+
+        .pattern-cell.has-data .pattern-indicator {
+            background: #4a9eff;
+        }
+
+        .pattern-loop-btn {
+            width: 20px;
+            height: 20px;
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 700;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .pattern-loop-btn:hover {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .pattern-loop-btn.active {
+            background: #4a9eff;
+            border-color: #4a9eff;
+            color: #000;
+        }
+
+        .pattern-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .pattern-mini-btn {
+            flex: 1;
+            background: #252525;
+            border: 1px solid #333;
+            color: #999;
+            padding: 6px 4px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .pattern-mini-btn:hover {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .pattern-mini-btn.copy-active {
+            background: #4a9eff;
+            border-color: #4a9eff;
+            color: #000;
+        }
+
+        .pattern-buttons-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .pattern-select-row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .pattern-select-label {
+            font-size: 8px;
+            color: #666;
+            font-weight: 600;
+            min-width: 35px;
+        }
+
+        .pattern-dropdown {
+            flex: 1;
+            background: #252525;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 4px;
+            border-radius: 3px;
+            font-size: 9px;
+            cursor: pointer;
+        }
+
+        .pattern-slider-row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .pattern-mini-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 2px;
+            background: #252525;
+            outline: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .pattern-mini-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 10px;
+            background: #4a9eff;
+            cursor: grab;
+            border-radius: 50%;
+        }
+
+        .pattern-mini-slider::-moz-range-thumb {
+            width: 10px;
+            height: 10px;
+            background: #4a9eff;
+            cursor: grab;
+            border-radius: 50%;
+            border: none;
+        }
+
+        .pattern-value-display {
+            font-size: 9px;
+            color: #4a9eff;
+            min-width: 30px;
+            text-align: right;
+            font-weight: 600;
         }
 
         .main-content {
@@ -146,180 +437,8 @@
 
         /* Mobile styles */
         @media (max-width: 768px) {
-            .app {
-                padding: 10px;
-                gap: 10px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 10px;
-                padding: 0;
-            }
-
-            .title {
-                font-size: 12px;
-            }
-
-            .transport {
-                flex-wrap: wrap;
-                gap: 8px;
-                justify-content: center;
-            }
-
-            .btn {
-                padding: 10px 16px;
-                font-size: 10px;
-            }
-
-            .tempo input {
-                width: 60px;
-                padding: 10px;
-                font-size: 12px;
-            }
-
-            .bar-indicator {
-                padding: 10px;
-                font-size: 10px;
-            }
-
-            .main-content {
-                flex-direction: column;
-            }
-
-            .tracks-panel {
-                padding: 10px;
-            }
-
-            .side-panel {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                width: 100%;
-                background: #0a0a0a;
-                z-index: 1000;
-                padding: 15px;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-                overflow-y: auto;
-            }
-
-            .side-panel.visible {
-                transform: translateX(0);
-            }
-
-            .track {
-                flex-direction: column;
-                gap: 10px;
-                padding: 12px;
-            }
-
-            .track-header {
-                min-width: auto;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .track-name {
-                cursor: pointer;
-                padding: 8px;
-                background: #1a1a1a;
-                border: 1px solid #333;
-                border-radius: 3px;
-                transition: all 0.2s;
-            }
-
-            .track-name:hover {
-                border-color: #4a9eff;
-                color: #4a9eff;
-            }
-
-            .sequencer {
-                flex-direction: row;
-                gap: 3px;
-                overflow-x: auto;
-                padding-bottom: 5px;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .step-container {
-                flex-direction: column;
-                gap: 3px;
-                min-width: 40px;
-            }
-
-            .lock-buttons {
-                gap: 2px;
-            }
-
-            .lock-btn {
-                width: 18px;
-                height: 18px;
-                font-size: 8px;
-            }
-
-            .step {
-                min-height: 50px;
-                width: 40px;
-            }
-
-            .step-condition {
-                min-width: auto;
-                width: 40px;
-                font-size: 8px;
-                padding: 3px 2px;
-            }
-
-            .sequencer::-webkit-scrollbar {
-                height: 6px;
-            }
-
-            .sequencer::-webkit-scrollbar-track {
-                background: #0a0a0a;
-                border-radius: 3px;
-            }
-
-            .sequencer::-webkit-scrollbar-thumb {
-                background: #4a9eff;
-                border-radius: 3px;
-            }
-
-            .section-title {
-                font-size: 9px;
-            }
-
-            .param-label {
-                font-size: 9px;
-            }
-
-            .value-display {
-                font-size: 10px;
-                min-width: 40px;
-            }
-
-            .engine-select {
-                gap: 6px;
-            }
-
-            .engine-btn {
-                padding: 6px 10px;
-                font-size: 9px;
-            }
-
-            .fx-controls {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-content {
-                max-width: 90%;
-                padding: 20px;
-            }
-
-            .condition-grid {
-                grid-template-columns: repeat(3, 1fr);
+            .pattern-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
         }
 
@@ -357,6 +476,7 @@
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 1px;
+            cursor: pointer;
         }
 
         .track-controls {
@@ -793,7 +913,7 @@
             border: 1px solid #333;
             border-radius: 6px;
             padding: 30px;
-            max-width: 300px;
+            max-width: 350px;
         }
 
         .modal-title {
@@ -807,7 +927,7 @@
 
         .condition-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
 
@@ -826,6 +946,22 @@
         .condition-option:hover {
             border-color: #4a9eff;
             color: #4a9eff;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
         }
 
         .global-controls {
@@ -847,11 +983,31 @@
                 <div class="bar-indicator" id="bar-indicator">Bar: 1/4</div>
                 <div class="tempo">
                     <span class="tempo-label">TEMPO</span>
-                    <input type="number" id="tempo-input" value="128" min="40" max="300">
+                    <div class="tempo-knob-container">
+                        <div class="tempo-knob" id="tempo-knob"></div>
+                        <div class="tempo-value" id="tempo-value">128</div>
+                    </div>
                 </div>
                 <button class="btn" id="play-btn">PLAY</button>
                 <button class="btn secondary" id="reset-btn">RESET</button>
             </div>
+        </div>
+
+        <div class="pattern-sequencer-panel">
+            <div class="pattern-sequencer-header">
+                <div class="pattern-sequencer-title">PATTERN SEQUENCER</div>
+                <div class="pattern-sequencer-controls">
+                    <select class="pattern-mode-select" id="pattern-mode">
+                        <option value="forward">FORWARD</option>
+                        <option value="pingpong">FORWARD & BACK</option>
+                        <option value="random">RANDOM</option>
+                        <option value="instant">INSTANT</option>
+                        <option value="next">NEXT</option>
+                    </select>
+                    <button class="btn secondary" id="pattern-seq-toggle">ENABLE</button>
+                </div>
+            </div>
+            <div class="pattern-grid" id="pattern-grid"></div>
         </div>
 
         <div class="main-content">
@@ -933,12 +1089,28 @@
                 </div>
             </div>
         </div>
+
+        <div class="global-controls">
+            <div class="section-title">MASTER FX</div>
+            <div class="fx-controls" id="master-fx-container"></div>
+        </div>
     </div>
 
     <div class="modal" id="condition-modal">
         <div class="modal-content">
             <div class="modal-title">TRIGGER CONDITION</div>
             <div class="condition-grid" id="condition-grid"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="custom-steps-modal">
+        <div class="modal-content">
+            <div class="modal-title">CUSTOM STEPS</div>
+            <input type="number" class="modal-input" id="custom-steps-input" placeholder="Enter step count" min="1" max="9999">
+            <div class="modal-buttons">
+                <button class="btn" id="custom-steps-ok">OK</button>
+                <button class="btn secondary" id="custom-steps-cancel">CANCEL</button>
+            </div>
         </div>
     </div>
 
@@ -1042,15 +1214,24 @@
             glitchRate: { label: 'Glitch Rate', min: 0.02, max: 0.5, step: 0.01, default: 0.1 }
         };
 
-        // Audio Engine with FX
+        // Audio Engine with FX (same as original)
         class DrumSynthEngine {
             constructor() {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.masterGain = this.audioContext.createGain();
-                this.masterGain.connect(this.audioContext.destination);
                 this.masterGain.gain.value = 0.5;
-                this.activeVoices = new Map(); // Track active voices per track
-                this.scheduledCleanups = new Set(); // Track cleanup timeouts
+                
+                // Master FX chain
+                this.masterFXInput = this.audioContext.createGain();
+                this.masterFXOutput = this.masterGain;
+                this.masterFXNodes = [];
+                
+                // Initially connect input directly to output (no FX)
+                this.masterFXInput.connect(this.masterFXOutput);
+                this.masterGain.connect(this.audioContext.destination);
+                
+                this.activeVoices = new Map();
+                this.scheduledCleanups = new Set();
             }
 
             stopVoice(trackId) {
@@ -1058,20 +1239,17 @@
                     const voice = this.activeVoices.get(trackId);
                     const now = this.audioContext.currentTime;
                     
-                    // Quick fade out
                     if (voice.outputGain && voice.outputGain.gain) {
                         voice.outputGain.gain.cancelScheduledValues(now);
                         voice.outputGain.gain.setValueAtTime(voice.outputGain.gain.value, now);
                         voice.outputGain.gain.linearRampToValueAtTime(0, now + 0.02);
                     }
                     
-                    // Stop and disconnect all nodes
                     setTimeout(() => {
                         if (voice.oscillators) {
                             voice.oscillators.forEach(osc => {
                                 try {
                                     osc.stop();
-                                    osc.disconnect();
                                 } catch(e) {}
                             });
                         }
@@ -1079,21 +1257,35 @@
                             voice.sources.forEach(src => {
                                 try {
                                     src.stop();
-                                    src.disconnect();
                                 } catch(e) {}
                             });
                         }
-                        if (voice.nodes) {
-                            voice.nodes.forEach(node => {
-                                try {
-                                    node.disconnect();
-                                } catch(e) {}
-                            });
-                        }
-                    }, 30);
+                    }, 25);
                     
                     this.activeVoices.delete(trackId);
                 }
+            }
+
+            updateMasterFX(fx) {
+                // Disconnect old chain
+                this.masterFXInput.disconnect();
+                this.masterFXNodes.forEach(node => {
+                    try {
+                        node.disconnect();
+                    } catch(e) {}
+                });
+                this.masterFXNodes = [];
+                
+                // Build new FX chain
+                const dummyVoice = {
+                    output: this.masterFXInput
+                };
+                
+                const fxResult = this.applyFX(dummyVoice, fx);
+                this.masterFXNodes = fxResult.fxNodes || [];
+                
+                // Connect final output to master gain
+                fxResult.output.connect(this.masterGain);
             }
 
             scheduleCleanup(nodes, stopTime) {
@@ -1130,7 +1322,6 @@
                 const now = this.audioContext.currentTime;
                 const fxNodes = [];
                 
-                // Wasp Filter
                 if (fx.waspFilter > 0) {
                     const preDrive = this.audioContext.createWaveShaper();
                     const driveCurve = new Float32Array(256);
@@ -1173,7 +1364,6 @@
                     current = waspMerger;
                 }
                 
-                // Drive
                 if (fx.drive > 1) {
                     const driveNode = this.audioContext.createWaveShaper();
                     const curve = new Float32Array(256);
@@ -1188,7 +1378,6 @@
                     current = driveNode;
                 }
                 
-                // Distortion
                 if (fx.distortion > 0) {
                     const distNode = this.audioContext.createWaveShaper();
                     const amount = fx.distortion * 50;
@@ -1209,7 +1398,6 @@
                     current = distGain;
                 }
                 
-                // Resonator
                 if (fx.resonator > 0) {
                     const resDelay = this.audioContext.createDelay(1);
                     const resFilter = this.audioContext.createBiquadFilter();
@@ -1248,7 +1436,6 @@
                     current = resMerger;
                 }
                 
-                // Delay
                 if (fx.delay > 0) {
                     const delayNode = this.audioContext.createDelay(2);
                     delayNode.delayTime.value = fx.delayTime || 0.25;
@@ -1272,7 +1459,6 @@
                     current = merger;
                 }
                 
-                // Reverb
                 if (fx.reverb > 0) {
                     const reverbNode = this.audioContext.createConvolver();
                     reverbNode.buffer = this.createReverbImpulse(fx.reverbSize || 2);
@@ -1296,7 +1482,6 @@
                     current = merger;
                 }
                 
-                // Glitch
                 if (fx.glitch > 0 && Math.random() < fx.glitch) {
                     const glitchGain = this.audioContext.createGain();
                     const stutterTime = fx.glitchRate || 0.1;
@@ -1696,9 +1881,7 @@
             }
 
             playDrum(trackId, engine, params, fx, velocity = 1) {
-                // Stop any existing voice on this track for monophonic behavior
                 if (!trackId || trackId === 'test') {
-                    // For testing/triggering sounds, use polyphonic behavior
                     trackId = 'test_' + Date.now();
                 } else {
                     this.stopVoice(trackId);
@@ -1718,20 +1901,28 @@
                     const voiceInfo = createEngine();
                     const fxInfo = this.applyFX(voiceInfo, fx);
                     
-                    // Apply velocity
                     const velocityGain = this.audioContext.createGain();
                     velocityGain.gain.value = velocity;
                     fxInfo.output.connect(velocityGain);
-                    velocityGain.connect(this.masterGain);
+                    velocityGain.connect(this.masterFXInput);
                     
-                    // Collect all nodes for cleanup
+                    let fxTailTime = 0;
+                    if (fx.delay > 0) {
+                        fxTailTime = Math.max(fxTailTime, (fx.delayTime || 0.25) * 5);
+                    }
+                    if (fx.reverb > 0) {
+                        fxTailTime = Math.max(fxTailTime, (fx.reverbSize || 2) * 1.5);
+                    }
+                    if (fx.resonator > 0) {
+                        fxTailTime = Math.max(fxTailTime, (fx.resDecay || 0.3) * 2);
+                    }
+                    
                     const allNodes = [
                         ...(voiceInfo.nodes || []),
                         ...(fxInfo.fxNodes || []),
                         velocityGain
                     ];
                     
-                    // Store voice info for monophonic management
                     this.activeVoices.set(trackId, {
                         oscillators: voiceInfo.oscillators,
                         sources: voiceInfo.sources,
@@ -1739,16 +1930,22 @@
                         outputGain: velocityGain
                     });
                     
-                    // Schedule cleanup
-                    this.scheduleCleanup(allNodes, voiceInfo.stopTime);
+                    const cleanupTime = voiceInfo.stopTime + fxTailTime;
+                    this.scheduleCleanup(allNodes, cleanupTime);
                     
-                    // Remove from active voices after it's done
-                    const cleanupDelay = Math.max(0, (voiceInfo.stopTime - this.audioContext.currentTime) * 1000 + 50);
+                    const cleanupDelay = Math.max(0, (cleanupTime - this.audioContext.currentTime) * 1000 + 100);
                     setTimeout(() => {
                         this.activeVoices.delete(trackId);
                     }, cleanupDelay);
                 }
             }
+
+            playDrumWithSlide(trackId, engine, startParams, targetParams, startFX, targetFX, velocity, duration) {
+                this.stopVoice(trackId);
+                // For simplicity, just play the start sound (slide implementation would be more complex)
+                this.playDrum(trackId, engine, startParams, startFX, velocity);
+            }
+        }
         }
 
         // Application State
@@ -1762,6 +1959,27 @@
             conditionModalStep: null,
             conditionModalTrack: null,
             globalMorphAmount: 0,
+            
+            // Master FX
+            masterFX: {},
+            
+            // Pattern Sequencer State
+            patternSequencerEnabled: false,
+            patternSequencerMode: 'forward', // 'forward', 'pingpong', 'random', 'instant', 'next'
+            currentPattern: 0,
+            selectedPattern: null, // For instant/next modes
+            nextPatternQueued: null, // For next mode
+            patternDirection: 1, // 1 for forward, -1 for backward
+            patternStepCount: 0, // Steps played in current pattern
+            copiedPattern: null, // For copy/paste functionality
+            patterns: Array(16).fill(null).map((_, i) => ({
+                id: i,
+                data: null, // Will store track data when written
+                steps: 16,
+                probability: 100,
+                loop: false // Loop flag for individual patterns
+            })),
+            
             tracks: {
                 kick: {
                     name: 'KICK',
@@ -1859,6 +2077,8 @@
         let audioEngine = null;
         let sequencerInterval = null;
         let dragState = null;
+        let knobDragState = null;
+        let customStepTarget = null;
 
         function lerp(a, b, t) {
             return a + (b - a) * t;
@@ -1868,19 +2088,16 @@
             const track = state.tracks[trackId];
             const engineSpec = ENGINE_SPECS[track.engine];
             
-            // Initialize params with defaults
             track.params = {};
             Object.entries(engineSpec.params).forEach(([key, spec]) => {
                 track.params[key] = spec.default;
             });
             
-            // Initialize FX with defaults
             track.fx = {};
             Object.entries(FX_SPECS).forEach(([key, spec]) => {
                 track.fx[key] = spec.default;
             });
             
-            // Set normal state
             setNormalState(trackId);
         }
 
@@ -1897,7 +2114,6 @@
             const trackId = state.selectedTrack;
             setNormalState(trackId);
             
-            // Visual feedback
             const btn = document.getElementById('set-normal-btn');
             const originalText = btn.textContent;
             btn.textContent = 'SAVED!';
@@ -1907,7 +2123,6 @@
                 btn.classList.remove('active');
             }, 500);
             
-            // Update sidebar to show the indicator
             renderSidebar();
         }
 
@@ -1915,22 +2130,18 @@
             const track = state.tracks[state.selectedTrack];
             
             if (!track.normalState) {
-                // If no normal state saved, initialize with defaults
                 initializeTrackDefaults(state.selectedTrack);
             }
             
-            // Load the normal state into current editing parameters
             track.engine = track.normalState.engine;
             track.params = { ...track.normalState.params };
             track.fx = { ...track.normalState.fx };
             
-            // Reset global morph
             state.globalMorphAmount = 0;
             track.targetParams = null;
             document.getElementById('global-morph-slider').value = 0;
             document.getElementById('global-morph-value').textContent = '0%';
             
-            // Visual feedback
             const btn = document.getElementById('recall-normal-btn');
             const originalText = btn.textContent;
             btn.textContent = 'RECALLED!';
@@ -1940,7 +2151,6 @@
                 btn.classList.remove('active');
             }, 500);
             
-            // Re-render to show the recalled parameters
             renderSidebar();
         }
 
@@ -1999,19 +2209,631 @@
             if (condition === '1:1') return true;
             
             const [bar, total] = condition.split(':').map(Number);
-            return currentBar === (bar - 1);
+            const barInPattern = currentBar % total;
+            return barInPattern === (bar - 1);
+        }
+
+        // Tempo Knob Functions
+        function setupTempoKnob() {
+            const knob = document.getElementById('tempo-knob');
+            
+            knob.addEventListener('mousedown', startKnobDrag);
+            document.addEventListener('mousemove', handleKnobDrag);
+            document.addEventListener('mouseup', stopKnobDrag);
+            
+            updateKnobRotation();
+        }
+
+        function startKnobDrag(e) {
+            e.preventDefault();
+            const rect = e.target.getBoundingClientRect();
+            knobDragState = {
+                startY: e.clientY,
+                startTempo: state.tempo
+            };
+        }
+
+        function handleKnobDrag(e) {
+            if (!knobDragState) return;
+            
+            const deltaY = knobDragState.startY - e.clientY;
+            const sensitivity = 0.5;
+            
+            let newTempo = knobDragState.startTempo + (deltaY * sensitivity);
+            newTempo = Math.max(40, Math.min(300, Math.round(newTempo)));
+            
+            if (newTempo !== state.tempo) {
+                state.tempo = newTempo;
+                updateKnobRotation();
+                
+                if (state.isPlaying) {
+                    stopSequencer();
+                    startSequencer();
+                }
+            }
+        }
+
+        function stopKnobDrag() {
+            knobDragState = null;
+        }
+
+        function updateKnobRotation() {
+            const knob = document.getElementById('tempo-knob');
+            const value = document.getElementById('tempo-value');
+            
+            // Map tempo (40-300) to rotation (-135 to 135 degrees)
+            const minTempo = 40;
+            const maxTempo = 300;
+            const minAngle = -135;
+            const maxAngle = 135;
+            
+            const percentage = (state.tempo - minTempo) / (maxTempo - minTempo);
+            const angle = minAngle + (percentage * (maxAngle - minAngle));
+            
+            knob.style.transform = `rotate(${angle}deg)`;
+            value.textContent = state.tempo;
+        }
+
+        // Pattern Sequencer Functions
+        function renderPatternSequencer() {
+            const grid = document.getElementById('pattern-grid');
+            
+            // Only render cells if not already rendered
+            if (grid.children.length === 0) {
+                state.patterns.forEach((pattern, i) => {
+                    const cell = createPatternCell(pattern, i);
+                    grid.appendChild(cell);
+                });
+            } else {
+                // Update existing cells
+                state.patterns.forEach((pattern, i) => {
+                    const cell = grid.children[i];
+                    updatePatternCell(cell, pattern, i);
+                });
+            }
+        }
+
+        function createPatternCell(pattern, index) {
+            const cell = document.createElement('div');
+            cell.className = 'pattern-cell';
+            cell.dataset.patternIndex = index;
+            
+            // Make cell selectable (click on cell but not on buttons)
+            cell.onclick = (e) => {
+                // Don't select if clicking on buttons or controls
+                if (e.target.tagName === 'BUTTON' || 
+                    e.target.tagName === 'SELECT' || 
+                    e.target.tagName === 'INPUT' ||
+                    e.target.classList.contains('pattern-mini-btn') ||
+                    e.target.classList.contains('pattern-loop-btn')) {
+                    return;
+                }
+                selectPattern(index);
+            };
+            
+            const header = document.createElement('div');
+            header.className = 'pattern-cell-header';
+            
+            const number = document.createElement('div');
+            number.className = 'pattern-number';
+            number.textContent = `P${index + 1}`;
+            
+            const headerRight = document.createElement('div');
+            headerRight.className = 'pattern-header-right';
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'pattern-indicator';
+            
+            const loopBtn = document.createElement('div');
+            loopBtn.className = 'pattern-loop-btn';
+            loopBtn.textContent = '⟳';
+            loopBtn.onclick = (e) => {
+                e.stopPropagation();
+                togglePatternLoop(index);
+            };
+            
+            headerRight.appendChild(indicator);
+            headerRight.appendChild(loopBtn);
+            
+            header.appendChild(number);
+            header.appendChild(headerRight);
+            
+            const buttonsRow1 = document.createElement('div');
+            buttonsRow1.className = 'pattern-buttons-row';
+            
+            const writeBtn = document.createElement('button');
+            writeBtn.className = 'pattern-mini-btn';
+            writeBtn.textContent = 'WRITE';
+            writeBtn.onclick = () => writePattern(index);
+            
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'pattern-mini-btn';
+            clearBtn.textContent = 'CLEAR';
+            clearBtn.onclick = () => clearPatternData(index);
+            
+            buttonsRow1.appendChild(writeBtn);
+            buttonsRow1.appendChild(clearBtn);
+            
+            const buttonsRow2 = document.createElement('div');
+            buttonsRow2.className = 'pattern-buttons-row';
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'pattern-mini-btn';
+            copyBtn.textContent = 'COPY';
+            copyBtn.onclick = () => copyPattern(index);
+            
+            const pasteBtn = document.createElement('button');
+            pasteBtn.className = 'pattern-mini-btn';
+            pasteBtn.textContent = 'PASTE';
+            pasteBtn.onclick = () => pastePattern(index);
+            
+            buttonsRow2.appendChild(copyBtn);
+            buttonsRow2.appendChild(pasteBtn);
+            
+            const stepsRow = document.createElement('div');
+            stepsRow.className = 'pattern-select-row';
+            
+            const stepsLabel = document.createElement('div');
+            stepsLabel.className = 'pattern-select-label';
+            stepsLabel.textContent = 'STEPS';
+            
+            const stepsSelect = document.createElement('select');
+            stepsSelect.className = 'pattern-dropdown';
+            [4, 8, 16, 32, 64, 128, 256, 'Custom'].forEach(val => {
+                const option = document.createElement('option');
+                option.value = val;
+                option.textContent = val;
+                if (val === pattern.steps) option.selected = true;
+                stepsSelect.appendChild(option);
+            });
+            stepsSelect.onchange = (e) => {
+                if (e.target.value === 'Custom') {
+                    openCustomStepsModal(index);
+                } else {
+                    pattern.steps = parseInt(e.target.value);
+                    renderPatternSequencer();
+                }
+            };
+            
+            stepsRow.appendChild(stepsLabel);
+            stepsRow.appendChild(stepsSelect);
+            
+            const probRow = document.createElement('div');
+            probRow.className = 'pattern-slider-row';
+            
+            const probLabel = document.createElement('div');
+            probLabel.className = 'pattern-select-label';
+            probLabel.textContent = 'PROB';
+            
+            const probSlider = document.createElement('input');
+            probSlider.type = 'range';
+            probSlider.className = 'pattern-mini-slider';
+            probSlider.min = 0;
+            probSlider.max = 100;
+            probSlider.value = pattern.probability;
+            probSlider.oninput = (e) => {
+                pattern.probability = parseInt(e.target.value);
+                cell.querySelector('.pattern-value-display').textContent = pattern.probability + '%';
+            };
+            
+            const probValue = document.createElement('div');
+            probValue.className = 'pattern-value-display';
+            probValue.textContent = pattern.probability + '%';
+            
+            probRow.appendChild(probLabel);
+            probRow.appendChild(probSlider);
+            probRow.appendChild(probValue);
+            
+            cell.appendChild(header);
+            cell.appendChild(buttonsRow1);
+            cell.appendChild(buttonsRow2);
+            cell.appendChild(stepsRow);
+            cell.appendChild(probRow);
+            
+            updatePatternCell(cell, pattern, index);
+            
+            return cell;
+        }
+
+        function updatePatternCell(cell, pattern, index) {
+            cell.classList.toggle('has-data', pattern.data !== null);
+            cell.classList.toggle('active', state.patternSequencerEnabled && state.currentPattern === index);
+            cell.classList.toggle('selected', state.selectedPattern === index);
+            
+            // Update loop button
+            const loopBtn = cell.querySelector('.pattern-loop-btn');
+            if (loopBtn) {
+                loopBtn.classList.toggle('active', pattern.loop);
+            }
+        }
+
+        function writePattern(index) {
+            const pattern = state.patterns[index];
+            
+            // Deep copy all track data
+            pattern.data = {};
+            Object.entries(state.tracks).forEach(([trackId, track]) => {
+                pattern.data[trackId] = {
+                    steps: [...track.steps],
+                    velocities: [...track.velocities],
+                    stepConditions: [...track.stepConditions],
+                    stepLocks: track.stepLocks.map(lock => lock ? { ...lock } : null),
+                    stepSlides: [...track.stepSlides]
+                };
+            });
+            
+            renderPatternSequencer();
+        }
+
+        function clearPatternData(index) {
+            state.patterns[index].data = null;
+            renderPatternSequencer();
+        }
+
+        function copyPattern(index) {
+            const pattern = state.patterns[index];
+            if (!pattern.data) return;
+            
+            // Deep copy the pattern data
+            state.copiedPattern = {
+                data: JSON.parse(JSON.stringify(pattern.data)),
+                steps: pattern.steps,
+                probability: pattern.probability,
+                loop: pattern.loop
+            };
+            
+            // Visual feedback - find the copy button for this pattern
+            const grid = document.getElementById('pattern-grid');
+            const cell = grid.children[index];
+            const buttonRows = cell.querySelectorAll('.pattern-buttons-row');
+            if (buttonRows.length > 1) {
+                const copyBtn = buttonRows[1].querySelector('.pattern-mini-btn:first-child');
+                if (copyBtn) {
+                    copyBtn.classList.add('copy-active');
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copy-active');
+                    }, 200);
+                }
+            }
+        }
+
+        function pastePattern(index) {
+            if (!state.copiedPattern) return;
+            
+            const pattern = state.patterns[index];
+            
+            // Deep copy from clipboard
+            pattern.data = JSON.parse(JSON.stringify(state.copiedPattern.data));
+            pattern.steps = state.copiedPattern.steps;
+            pattern.probability = state.copiedPattern.probability;
+            pattern.loop = state.copiedPattern.loop;
+            
+            // Visual feedback - find the paste button for this pattern
+            const grid = document.getElementById('pattern-grid');
+            const cell = grid.children[index];
+            const buttonRows = cell.querySelectorAll('.pattern-buttons-row');
+            if (buttonRows.length > 1) {
+                const pasteBtn = buttonRows[1].querySelector('.pattern-mini-btn:last-child');
+                if (pasteBtn) {
+                    pasteBtn.classList.add('copy-active');
+                    setTimeout(() => {
+                        pasteBtn.classList.remove('copy-active');
+                    }, 200);
+                }
+            }
+            
+            renderPatternSequencer();
+        }
+
+        function getWrittenPatterns() {
+            return state.patterns
+                .map((p, i) => ({ pattern: p, index: i }))
+                .filter(p => p.pattern.data !== null);
+        }
+
+        function findNextWrittenPattern(currentIndex) {
+            const written = getWrittenPatterns();
+            if (written.length === 0) return -1;
+            
+            // Find current position in written array
+            const currentPos = written.findIndex(p => p.index === currentIndex);
+            
+            if (currentPos === -1) {
+                // Current pattern not in written list, start from beginning
+                return written[0].index;
+            }
+            
+            // Move to next, loop back to start if at end
+            const nextPos = (currentPos + 1) % written.length;
+            return written[nextPos].index;
+        }
+
+        function findPreviousWrittenPattern(currentIndex) {
+            const written = getWrittenPatterns();
+            if (written.length === 0) return -1;
+            
+            const currentPos = written.findIndex(p => p.index === currentIndex);
+            
+            if (currentPos === -1) {
+                return written[written.length - 1].index;
+            }
+            
+            const prevPos = (currentPos - 1 + written.length) % written.length;
+            return written[prevPos].index;
+        }
+
+        function getRandomWrittenPattern() {
+            const written = getWrittenPatterns();
+            if (written.length === 0) return -1;
+            if (written.length === 1) return written[0].index;
+            
+            // Pick a random pattern that's not the current one
+            let randomPattern;
+            do {
+                randomPattern = written[Math.floor(Math.random() * written.length)];
+            } while (randomPattern.index === state.currentPattern);
+            
+            return randomPattern.index;
+        }
+
+        function togglePatternLoop(index) {
+            state.patterns[index].loop = !state.patterns[index].loop;
+            renderPatternSequencer();
+        }
+
+        function selectPattern(index) {
+            const pattern = state.patterns[index];
+            
+            // In instant and next modes, handle pattern selection differently
+            if (state.patternSequencerMode === 'instant') {
+                if (pattern.data) {
+                    state.selectedPattern = index;
+                    
+                    // Calculate equivalent step position
+                    const currentPatternLength = state.patterns[state.currentPattern].steps;
+                    const newPatternLength = pattern.steps;
+                    let equivalentStep;
+                    
+                    if (state.currentStep >= 0) {
+                        // Map current position to equivalent position in new pattern
+                        const progressRatio = (state.patternStepCount % currentPatternLength) / currentPatternLength;
+                        equivalentStep = Math.floor(progressRatio * newPatternLength);
+                    } else {
+                        equivalentStep = 0;
+                    }
+                    
+                    // Switch immediately
+                    state.currentPattern = index;
+                    state.patternStepCount = equivalentStep;
+                    loadPattern(index);
+                    
+                    if (!state.isPlaying) {
+                        // Start playing if not already
+                        togglePlay();
+                    }
+                }
+            } else if (state.patternSequencerMode === 'next') {
+                if (pattern.data) {
+                    state.selectedPattern = index;
+                    state.nextPatternQueued = index;
+                    
+                    if (!state.isPlaying) {
+                        // Start playing immediately
+                        state.currentPattern = index;
+                        loadPattern(index);
+                        state.patternStepCount = 0;
+                        togglePlay();
+                    }
+                }
+            } else {
+                // For other modes, just select and load for editing
+                state.selectedPattern = index;
+                if (pattern.data) {
+                    loadPattern(index);
+                }
+            }
+            
+            renderPatternSequencer();
+        }
+
+        function loadPattern(index) {
+            const pattern = state.patterns[index];
+            
+            if (!pattern.data) return;
+            
+            // Load pattern data into tracks
+            Object.entries(pattern.data).forEach(([trackId, data]) => {
+                const track = state.tracks[trackId];
+                if (track) {
+                    track.steps = [...data.steps];
+                    track.velocities = [...data.velocities];
+                    track.stepConditions = [...data.stepConditions];
+                    track.stepLocks = data.stepLocks.map(lock => lock ? { ...lock } : null);
+                    track.stepSlides = [...data.stepSlides];
+                }
+            });
+            
+            renderTracks();
+        }
+
+        function openCustomStepsModal(patternIndex) {
+            customStepTarget = patternIndex;
+            document.getElementById('custom-steps-input').value = '';
+            document.getElementById('custom-steps-modal').classList.add('active');
+            document.getElementById('custom-steps-input').focus();
+        }
+
+        function closeCustomStepsModal() {
+            document.getElementById('custom-steps-modal').classList.remove('active');
+            customStepTarget = null;
+        }
+
+        function setCustomSteps() {
+            const input = document.getElementById('custom-steps-input');
+            const value = parseInt(input.value);
+            
+            if (value && value > 0 && value < 10000 && customStepTarget !== null) {
+                state.patterns[customStepTarget].steps = value;
+                renderPatternSequencer();
+            }
+            
+            closeCustomStepsModal();
+        }
+
+        function advancePattern() {
+            const written = getWrittenPatterns();
+            if (written.length === 0) return;
+            
+            // Check probability
+            if (Math.random() * 100 > state.patterns[state.currentPattern].probability) {
+                // Skip this pattern
+                moveToNextPattern();
+                advancePattern(); // Try the next pattern
+                return;
+            }
+            
+            // Load the pattern
+            loadPattern(state.currentPattern);
+            state.patternStepCount = 0;
+            renderPatternSequencer();
+        }
+
+        function moveToNextPattern() {
+            const written = getWrittenPatterns();
+            if (written.length === 0) {
+                // No written patterns, disable sequencer
+                state.patternSequencerEnabled = false;
+                const btn = document.getElementById('pattern-seq-toggle');
+                btn.classList.remove('active');
+                btn.textContent = 'ENABLE';
+                return;
+            }
+            
+            // Check if current pattern should loop
+            if (state.patterns[state.currentPattern].loop) {
+                // Loop current pattern
+                return;
+            }
+            
+            // Handle instant mode - just loop the current pattern unless manually switched
+            if (state.patternSequencerMode === 'instant') {
+                // Pattern was already switched by selectPattern, just loop
+                return;
+            }
+            
+            // Handle next mode - play queued pattern or loop current
+            if (state.patternSequencerMode === 'next') {
+                if (state.nextPatternQueued !== null && state.patterns[state.nextPatternQueued].data) {
+                    state.currentPattern = state.nextPatternQueued;
+                    state.nextPatternQueued = null;
+                    renderPatternSequencer();
+                    return;
+                }
+                // No queued pattern, loop current
+                return;
+            }
+            
+            // Original modes: forward, pingpong, random
+            switch(state.patternSequencerMode) {
+                case 'forward':
+                    const nextForward = findNextWrittenPattern(state.currentPattern);
+                    if (nextForward !== -1) {
+                        state.currentPattern = nextForward;
+                    }
+                    break;
+                    
+                case 'pingpong':
+                    if (state.patternDirection === 1) {
+                        const nextPing = findNextWrittenPattern(state.currentPattern);
+                        if (nextPing !== -1) {
+                            state.currentPattern = nextPing;
+                            // Check if we've reached the last written pattern
+                            const writtenIndices = written.map(p => p.index);
+                            const maxIndex = Math.max(...writtenIndices);
+                            if (state.currentPattern === maxIndex) {
+                                state.patternDirection = -1;
+                            }
+                        }
+                    } else {
+                        const prevPong = findPreviousWrittenPattern(state.currentPattern);
+                        if (prevPong !== -1) {
+                            state.currentPattern = prevPong;
+                            // Check if we've reached the first written pattern
+                            const writtenIndices = written.map(p => p.index);
+                            const minIndex = Math.min(...writtenIndices);
+                            if (state.currentPattern === minIndex) {
+                                state.patternDirection = 1;
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'random':
+                    const nextRandom = getRandomWrittenPattern();
+                    if (nextRandom !== -1) {
+                        state.currentPattern = nextRandom;
+                    }
+                    break;
+            }
+            
+            renderPatternSequencer();
+        }
+
+        function togglePatternSequencer() {
+            state.patternSequencerEnabled = !state.patternSequencerEnabled;
+            
+            const btn = document.getElementById('pattern-seq-toggle');
+            if (state.patternSequencerEnabled) {
+                const written = getWrittenPatterns();
+                if (written.length === 0) {
+                    // No patterns to play
+                    state.patternSequencerEnabled = false;
+                    alert('Please write at least one pattern before enabling the sequencer.');
+                    return;
+                }
+                
+                btn.classList.add('active');
+                btn.textContent = 'ENABLED';
+                
+                // For instant and next modes, don't auto-start
+                if (state.patternSequencerMode === 'instant' || state.patternSequencerMode === 'next') {
+                    // Just enable, wait for user to select a pattern
+                    state.selectedPattern = null;
+                    state.nextPatternQueued = null;
+                } else {
+                    // Start from the first written pattern for other modes
+                    state.currentPattern = written[0].index;
+                    state.patternStepCount = 0;
+                    state.patternDirection = 1;
+                    advancePattern();
+                }
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = 'ENABLE';
+                state.selectedPattern = null;
+                state.nextPatternQueued = null;
+            }
+            
+            renderPatternSequencer();
         }
 
         function init() {
             audioEngine = new DrumSynthEngine();
             
-            // Initialize all tracks with defaults
             Object.keys(state.tracks).forEach(trackId => {
                 initializeTrackDefaults(trackId);
             });
             
+            // Initialize master FX with defaults
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                state.masterFX[key] = spec.default;
+            });
+            
+            setupTempoKnob();
             renderTracks();
             renderSidebar();
+            renderPatternSequencer();
+            renderMasterFX();
             setupEventListeners();
         }
 
@@ -2046,7 +2868,6 @@
                             stepEl.classList.toggle('playing', i === state.currentStep);
                             stepEl.classList.toggle('has-locks', hasLocks);
                             
-                            // Update velocity bar
                             const velocityBar = stepEl.querySelector('.velocity-bar');
                             const velocityValue = stepEl.querySelector('.velocity-value');
                             if (velocityBar && velocityValue) {
@@ -2055,7 +2876,6 @@
                                 velocityValue.textContent = Math.round(velocity * 100);
                             }
                             
-                            // Update P and S buttons
                             const pBtn = container.querySelector('.p-lock-btn');
                             const sBtn = container.querySelector('.s-lock-btn');
                             
@@ -2134,7 +2954,6 @@
                 const container = document.createElement('div');
                 container.className = 'step-container';
                 
-                // Lock buttons (P and S)
                 const lockButtons = document.createElement('div');
                 lockButtons.className = 'lock-buttons';
                 
@@ -2161,7 +2980,6 @@
                 const hasLocks = track.stepLocks[i] !== null;
                 step.className = `step ${track.steps[i] ? 'active' : ''} ${i % 4 === 0 ? 'beat-4' : ''} ${hasLocks ? 'has-locks' : ''}`;
                 
-                // Add velocity bar and value display
                 const velocityBar = document.createElement('div');
                 velocityBar.className = 'velocity-bar';
                 velocityBar.style.height = (track.velocities[i] * 100) + '%';
@@ -2173,7 +2991,6 @@
                 step.appendChild(velocityBar);
                 step.appendChild(velocityValue);
                 
-                // Mouse events for velocity dragging
                 step.onmousedown = (e) => handleStepMouseDown(e, trackId, i);
                 
                 const condition = document.createElement('div');
@@ -2200,8 +3017,6 @@
             e.preventDefault();
             e.stopPropagation();
             
-            const step = e.currentTarget;
-            const rect = step.getBoundingClientRect();
             const startY = e.clientY;
             const startVelocity = state.tracks[trackId].velocities[stepIndex];
             
@@ -2259,7 +3074,6 @@
             const title = `${selectedTrack.name} — ${ENGINE_SPECS[selectedTrack.engine].name}${indicator}`;
             document.getElementById('synth-title').textContent = title;
             
-            // Update track morph slider
             document.getElementById('track-morph-slider').value = selectedTrack.morphAmount;
             document.getElementById('track-morph-value').textContent = selectedTrack.morphAmount.toFixed(0) + '%';
             
@@ -2287,7 +3101,6 @@
             const selectedTrack = state.tracks[state.selectedTrack];
             const engineSpec = ENGINE_SPECS[selectedTrack.engine];
             
-            // Get morphed state if there's a target
             const morphedState = getMorphedState(selectedTrack);
             const displayParams = morphedState.params;
             
@@ -2338,7 +3151,6 @@
             
             const selectedTrack = state.tracks[state.selectedTrack];
             
-            // Get morphed state if there's a target
             const morphedState = getMorphedState(selectedTrack);
             const displayFX = morphedState.fx;
 
@@ -2380,18 +3192,57 @@
             });
         }
 
+        function renderMasterFX() {
+            const container = document.getElementById('master-fx-container');
+            container.innerHTML = '';
+
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                const paramDiv = document.createElement('div');
+                paramDiv.className = 'param';
+                
+                const label = document.createElement('div');
+                label.className = 'param-label';
+                label.textContent = spec.label;
+                
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'param-value';
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.className = 'slider';
+                slider.min = spec.min;
+                slider.max = spec.max;
+                slider.step = spec.step;
+                slider.value = state.masterFX[key] !== undefined ? state.masterFX[key] : spec.default;
+                
+                const display = document.createElement('div');
+                display.className = 'value-display';
+                const decimals = spec.step < 0.1 ? 2 : spec.step < 1 ? 1 : 0;
+                display.textContent = parseFloat(slider.value).toFixed(decimals);
+                
+                slider.oninput = (e) => {
+                    const value = parseFloat(e.target.value);
+                    display.textContent = value.toFixed(decimals);
+                    updateMasterFX(key, value);
+                };
+                
+                valueDiv.appendChild(slider);
+                valueDiv.appendChild(display);
+                paramDiv.appendChild(label);
+                paramDiv.appendChild(valueDiv);
+                container.appendChild(paramDiv);
+            });
+        }
+
+        function updateMasterFX(key, value) {
+            state.masterFX[key] = value;
+            // Update the audio engine's master FX chain
+            audioEngine.updateMasterFX(state.masterFX);
+        }
+
         function setupEventListeners() {
             document.getElementById('play-btn').onclick = togglePlay;
             document.getElementById('reset-btn').onclick = reset;
-            document.getElementById('tempo-input').oninput = (e) => {
-                const val = parseInt(e.target.value) || 120;
-                state.tempo = Math.max(40, Math.min(300, val));
-                e.target.value = state.tempo;
-                if (state.isPlaying) {
-                    stopSequencer();
-                    startSequencer();
-                }
-            };
             
             document.getElementById('randomize-pattern-btn').onclick = () => randomizePattern(state.selectedTrack);
             document.getElementById('test-sound-btn').onclick = testSound;
@@ -2399,6 +3250,15 @@
             document.getElementById('set-normal-btn').onclick = setNormalButtonClick;
             document.getElementById('recall-normal-btn').onclick = recallNormalState;
             document.getElementById('trigger-btn').onclick = triggerSound;
+            
+            // Pattern sequencer
+            document.getElementById('pattern-seq-toggle').onclick = togglePatternSequencer;
+            document.getElementById('pattern-mode').onchange = (e) => {
+                state.patternSequencerMode = e.target.value;
+                state.selectedPattern = null;
+                state.nextPatternQueued = null;
+                renderPatternSequencer();
+            };
             
             // Track morph
             document.getElementById('track-generate-btn').onclick = generateTrackTarget;
@@ -2421,16 +3281,23 @@
                 renderFX();
             };
             
-            // Mobile close button
-            document.getElementById('close-panel-btn').onclick = () => {
-                document.getElementById('side-panel').classList.remove('visible');
-            };
-            
-            // Modal
+            // Modals
             document.getElementById('condition-modal').onclick = (e) => {
                 if (e.target.id === 'condition-modal') {
                     closeConditionModal();
                 }
+            };
+            
+            document.getElementById('custom-steps-modal').onclick = (e) => {
+                if (e.target.id === 'custom-steps-modal') {
+                    closeCustomStepsModal();
+                }
+            };
+            
+            document.getElementById('custom-steps-ok').onclick = setCustomSteps;
+            document.getElementById('custom-steps-cancel').onclick = closeCustomStepsModal;
+            document.getElementById('custom-steps-input').onkeypress = (e) => {
+                if (e.key === 'Enter') setCustomSteps();
             };
         }
 
@@ -2446,6 +3313,13 @@
                 btn.classList.remove('active');
                 btn.textContent = 'PLAY';
                 stopSequencer();
+                // Reset transport to beginning
+                state.currentStep = -1;
+                state.currentBar = 0;
+                state.stepInBar = 0;
+                state.patternStepCount = 0;
+                updateBarIndicator();
+                renderTracks();
             }
         }
 
@@ -2462,13 +3336,24 @@
                     updateBarIndicator();
                 }
                 
+                // Pattern sequencer logic
+                if (state.patternSequencerEnabled) {
+                    state.patternStepCount++;
+                    const currentPattern = state.patterns[state.currentPattern];
+                    
+                    if (state.patternStepCount >= currentPattern.steps) {
+                        // Pattern finished, check what to do next
+                        moveToNextPattern();
+                        advancePattern();
+                    }
+                }
+                
                 Object.entries(state.tracks).forEach(([trackId, track]) => {
                     const condition = track.stepConditions[state.currentStep];
                     
                     if (track.steps[state.currentStep] && !track.mute && shouldTrigger(condition, state.currentBar)) {
                         const velocity = track.velocities[state.currentStep];
                         
-                        // Determine the sound to play at this step
                         let baseEngine, baseParams, baseFX;
                         const currentLock = track.stepLocks[state.currentStep];
                         
@@ -2486,11 +3371,9 @@
                             baseFX = track.fx;
                         }
                         
-                        // Check if slide is enabled
                         const slideEnabled = track.stepSlides[state.currentStep];
                         
                         if (slideEnabled) {
-                            // Find the next active step
                             let nextActiveStep = null;
                             let stepsToNext = 0;
                             for (let i = 1; i <= 16; i++) {
@@ -2503,10 +3386,8 @@
                             }
                             
                             if (nextActiveStep !== null) {
-                                // Calculate slide duration
                                 const slideDurationSeconds = (stepsToNext * stepDuration) / 1000;
                                 
-                                // Get target sound
                                 let targetEngine, targetParams, targetFX;
                                 const nextLock = track.stepLocks[nextActiveStep];
                                 
@@ -2524,34 +3405,20 @@
                                     targetFX = track.fx;
                                 }
                                 
-                                // Create modified params for slide - extend decay and morph pitch
-                                const slideParams = { ...baseParams };
-                                
-                                // For engines with pitch, morph toward target pitch
-                                if (slideParams.pitch !== undefined && targetParams.pitch !== undefined) {
-                                    // We'll use automation to morph the pitch
-                                    // For now, start at base pitch
-                                }
-                                
-                                // Extend the decay to last until the next step
-                                if (slideParams.decay !== undefined) {
-                                    slideParams.decay = Math.max(slideParams.decay, slideDurationSeconds);
-                                }
-                                if (slideParams.toneDecay !== undefined) {
-                                    slideParams.toneDecay = Math.max(slideParams.toneDecay, slideDurationSeconds);
-                                }
-                                if (slideParams.noiseDecay !== undefined) {
-                                    slideParams.noiseDecay = Math.max(slideParams.noiseDecay, slideDurationSeconds * 0.8);
-                                }
-                                
-                                // Play the sound with extended decay
-                                audioEngine.playDrum(trackId, baseEngine, slideParams, baseFX, velocity);
+                                audioEngine.playDrumWithSlide(
+                                    trackId, 
+                                    baseEngine, 
+                                    baseParams, 
+                                    targetParams,
+                                    baseFX, 
+                                    targetFX,
+                                    velocity,
+                                    slideDurationSeconds
+                                );
                             } else {
-                                // No next step, just play normally
                                 audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
                             }
                         } else {
-                            // No slide - play normally (this will cut off any previous sound)
                             audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
                         }
                     }
@@ -2572,7 +3439,6 @@
                 sequencerInterval = null;
             }
             
-            // Stop all active voices
             Object.keys(state.tracks).forEach(trackId => {
                 audioEngine.stopVoice(trackId);
             });
@@ -2587,22 +3453,28 @@
         }
 
         function reset() {
+            const wasPlaying = state.isPlaying;
+            
+            if (wasPlaying) {
+                stopSequencer();
+            }
+            
             state.currentStep = -1;
             state.currentBar = 0;
             state.stepInBar = 0;
+            state.patternStepCount = 0;
             updateBarIndicator();
             renderTracks();
+            
+            if (wasPlaying) {
+                startSequencer();
+            }
         }
 
         function selectTrack(trackId) {
             state.selectedTrack = trackId;
             renderTracks();
             renderSidebar();
-            
-            // On mobile, show params panel
-            if (window.innerWidth <= 768) {
-                document.getElementById('side-panel').classList.add('visible');
-            }
         }
 
         function toggleStep(trackId, stepIndex) {
@@ -2614,10 +3486,8 @@
             const track = state.tracks[trackId];
             
             if (track.stepLocks[stepIndex]) {
-                // Remove lock
                 track.stepLocks[stepIndex] = null;
             } else {
-                // Store current state as lock
                 track.stepLocks[stepIndex] = {
                     engine: track.engine,
                     params: { ...track.params },
@@ -2630,10 +3500,7 @@
 
         function toggleSLock(trackId, stepIndex) {
             const track = state.tracks[trackId];
-            
-            // Simply toggle the slide flag - works independent of P-lock
             track.stepSlides[stepIndex] = !track.stepSlides[stepIndex];
-            
             renderTracks();
         }
 
@@ -2645,10 +3512,7 @@
         function randomizePattern(trackId) {
             const density = 0.25 + Math.random() * 0.3;
             state.tracks[trackId].steps = Array(16).fill(false).map(() => Math.random() < density);
-            
-            // Randomize velocities too
             state.tracks[trackId].velocities = Array(16).fill(0).map(() => 0.4 + Math.random() * 0.6);
-            
             renderTracks();
         }
 
@@ -2668,17 +3532,14 @@
             });
             track.params = newParams;
             
-            // Reset FX to defaults
             const newFX = {};
             Object.entries(FX_SPECS).forEach(([key, spec]) => {
                 newFX[key] = spec.default;
             });
             track.fx = newFX;
             
-            // Update normal state with new engine defaults
             setNormalState(state.selectedTrack);
             
-            // Visual feedback that normal state was set
             const btn = document.getElementById('set-normal-btn');
             if (btn) {
                 const originalText = btn.textContent;
@@ -2698,7 +3559,6 @@
             const track = state.tracks[state.selectedTrack];
             track.params[key] = value;
             
-            // Reset morph when manually editing
             if (track.morphAmount > 0) {
                 track.morphAmount = 0;
                 track.targetParams = null;
@@ -2711,7 +3571,6 @@
             const track = state.tracks[state.selectedTrack];
             track.fx[key] = value;
             
-            // Reset morph when manually editing
             if (track.morphAmount > 0) {
                 track.morphAmount = 0;
                 track.targetParams = null;
@@ -2764,7 +3623,6 @@
                 fx: generateRandomFX()
             };
             
-            // Visual feedback
             const btn = document.getElementById('track-generate-btn');
             const originalText = btn.textContent;
             btn.textContent = 'GENERATED!';
@@ -2786,7 +3644,6 @@
             document.getElementById('track-morph-slider').value = 0;
             document.getElementById('track-morph-value').textContent = '0%';
             
-            // Visual feedback
             const btn = document.getElementById('track-lock-btn');
             const originalText = btn.textContent;
             btn.textContent = 'LOCKED!';
@@ -2805,7 +3662,12 @@
             const grid = document.getElementById('condition-grid');
             grid.innerHTML = '';
             
-            const conditions = ['1:1', '1:4', '2:4', '3:4', '4:4'];
+            const conditions = [
+                '1:1',
+                '1:2', '2:2',
+                '1:3', '2:3', '3:3',
+                '1:4', '2:4', '3:4', '4:4'
+            ];
             
             conditions.forEach(condition => {
                 const option = document.createElement('div');
@@ -2835,17 +3697,14 @@
         function testSound() {
             const track = state.tracks[state.selectedTrack];
             const morphedState = getMorphedState(track);
-            // Play morphed state (what you're hearing with the sliders)
             audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
         }
 
         function triggerSound() {
             const track = state.tracks[state.selectedTrack];
             const morphedState = getMorphedState(track);
-            // Play morphed state (what you're hearing with the sliders)
             audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
             
-            // Visual feedback
             const btn = document.getElementById('trigger-btn');
             btn.classList.add('active');
             setTimeout(() => btn.classList.remove('active'), 100);
