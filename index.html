@@ -15,12 +15,13 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #0a0a0a;
             color: #e0e0e0;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             user-select: none;
         }
 
         .app {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 20px;
@@ -141,7 +142,7 @@
             background: #151515;
             border: 1px solid #252525;
             border-radius: 6px;
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             gap: 15px;
             align-items: center;
@@ -153,7 +154,7 @@
             letter-spacing: 2px;
             text-transform: uppercase;
             color: #666;
-            min-width: 80px;
+            min-width: 70px;
         }
 
         .pattern-slots {
@@ -220,7 +221,7 @@
             background: #151515;
             border: 1px solid #252525;
             border-radius: 6px;
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             gap: 15px;
             align-items: center;
@@ -232,7 +233,7 @@
             letter-spacing: 2px;
             text-transform: uppercase;
             color: #666;
-            min-width: 80px;
+            min-width: 70px;
         }
 
         .save-load-actions {
@@ -249,6 +250,7 @@
             display: flex;
             gap: 20px;
             flex: 1;
+            min-height: 600px;
             overflow: hidden;
             position: relative;
         }
@@ -267,6 +269,14 @@
             .app {
                 padding: 10px;
                 gap: 10px;
+            }
+
+            .main-content {
+                min-height: 400px;
+            }
+
+            .bottom-controls {
+                max-height: none;
             }
 
             .header {
@@ -989,6 +999,37 @@
             flex-direction: column;
             gap: 15px;
         }
+
+        .global-controls .fx-controls {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .bottom-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .bottom-controls::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .bottom-controls::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .bottom-controls::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .bottom-controls::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
     </style>
 </head>
 <body>
@@ -1089,22 +1130,29 @@
             </div>
         </div>
 
-        <div class="global-controls">
-            <div class="section-title">GLOBAL MORPH</div>
-            <div class="morph-control">
-                <div class="morph-header">
-                    <div class="morph-title">Current → Random</div>
-                    <div class="morph-buttons">
-                        <button class="morph-btn" id="global-generate-btn">Generate</button>
-                        <button class="morph-btn" id="global-lock-btn">Lock</button>
+        <div class="bottom-controls">
+            <div class="global-controls">
+                <div class="section-title">GLOBAL MORPH</div>
+                <div class="morph-control">
+                    <div class="morph-header">
+                        <div class="morph-title">Current → Random</div>
+                        <div class="morph-buttons">
+                            <button class="morph-btn" id="global-generate-btn">Generate</button>
+                            <button class="morph-btn" id="global-lock-btn">Lock</button>
+                        </div>
+                    </div>
+                    <div class="param">
+                        <div class="param-value">
+                            <input type="range" class="slider" id="global-morph-slider" min="0" max="100" value="0">
+                            <div class="value-display" id="global-morph-value">0%</div>
+                        </div>
                     </div>
                 </div>
-                <div class="param">
-                    <div class="param-value">
-                        <input type="range" class="slider" id="global-morph-slider" min="0" max="100" value="0">
-                        <div class="value-display" id="global-morph-value">0%</div>
-                    </div>
-                </div>
+            </div>
+
+            <div class="global-controls">
+                <div class="section-title">MASTER FX</div>
+                <div class="fx-controls" id="master-fx-container"></div>
             </div>
         </div>
     </div>
@@ -1195,6 +1243,58 @@
                     resonance: { label: 'Body Res', min: 0, max: 15, step: 0.1, default: 5 },
                     damping: { label: 'Damping', min: 0, max: 2, step: 0.01, default: 0.7 }
                 }
+            },
+            'Additive': {
+                name: 'Additive',
+                params: {
+                    pitch: { label: 'Pitch', min: 40, max: 800, step: 1, default: 150 },
+                    harmonics: { label: 'Harmonics', min: 2, max: 16, step: 1, default: 8 },
+                    decay: { label: 'Decay', min: 0.05, max: 3, step: 0.01, default: 0.5 },
+                    decaySpread: { label: 'Decay Spread', min: 0.5, max: 3, step: 0.01, default: 1.5 },
+                    evenOdd: { label: 'Even/Odd', min: 0, max: 1, step: 0.01, default: 0.5 },
+                    brightness: { label: 'Brightness', min: 0.1, max: 3, step: 0.01, default: 1 },
+                    attack: { label: 'Attack', min: 0, max: 0.05, step: 0.001, default: 0.001 },
+                    shape: { label: 'Env Shape', min: 0.3, max: 3, step: 0.1, default: 1 }
+                }
+            },
+            'FM2': {
+                name: 'Abstract FM',
+                params: {
+                    pitch: { label: 'Pitch', min: 40, max: 2000, step: 1, default: 300 },
+                    cRatio: { label: 'C:M Ratio', min: 0.125, max: 16, step: 0.125, default: 1 },
+                    modIndex: { label: 'Mod Index', min: 0, max: 20, step: 0.1, default: 5 },
+                    indexDecay: { label: 'Index Env', min: 0.01, max: 1, step: 0.01, default: 0.2 },
+                    feedback: { label: 'Feedback', min: 0, max: 0.95, step: 0.01, default: 0 },
+                    decay: { label: 'Amp Decay', min: 0.01, max: 2, step: 0.01, default: 0.3 },
+                    chaos: { label: 'Chaos', min: 0, max: 1, step: 0.01, default: 0 },
+                    attack: { label: 'Attack', min: 0, max: 0.1, step: 0.001, default: 0.001 }
+                }
+            },
+            'KS': {
+                name: 'Karplus-Strong',
+                params: {
+                    pitch: { label: 'Pitch', min: 40, max: 800, step: 1, default: 110 },
+                    decay: { label: 'Decay', min: 0.1, max: 5, step: 0.01, default: 1.5 },
+                    brightness: { label: 'Brightness', min: 0.1, max: 1, step: 0.01, default: 0.5 },
+                    damping: { label: 'Damping', min: 0, max: 0.99, step: 0.01, default: 0.5 },
+                    stretch: { label: 'Stretch', min: 0.95, max: 1.05, step: 0.001, default: 1 },
+                    exciter: { label: 'Exciter', min: 0, max: 1, step: 0.01, default: 0.5 },
+                    pickPos: { label: 'Pick Pos', min: 0.1, max: 0.9, step: 0.01, default: 0.5 },
+                    noise: { label: 'Noise', min: 0, max: 1, step: 0.01, default: 0.3 }
+                }
+            },
+            'Buchla': {
+                name: 'Buchla Bongo',
+                params: {
+                    pitch: { label: 'Pitch', min: 60, max: 400, step: 1, default: 180 },
+                    decay: { label: 'Decay', min: 0.05, max: 2, step: 0.01, default: 0.4 },
+                    tone: { label: 'Tone', min: 0.2, max: 3, step: 0.01, default: 1 },
+                    metallic: { label: 'Metallic', min: 0, max: 1, step: 0.01, default: 0.3 },
+                    impact: { label: 'Impact', min: 0, max: 1, step: 0.01, default: 0.5 },
+                    ring: { label: 'Ring', min: 0, max: 1, step: 0.01, default: 0.4 },
+                    sweep: { label: 'Sweep', min: 0, max: 2, step: 0.01, default: 0.5 },
+                    noise: { label: 'Noise', min: 0, max: 1, step: 0.01, default: 0.2 }
+                }
             }
         };
 
@@ -1220,11 +1320,45 @@
         class DrumSynthEngine {
             constructor() {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.trackGain = this.audioContext.createGain();
+                this.masterFXInput = this.audioContext.createGain();
+                this.masterFXOutput = this.audioContext.createGain();
                 this.masterGain = this.audioContext.createGain();
+                
+                // Default routing: trackGain -> masterFXInput -> masterFXOutput -> masterGain -> destination
+                this.trackGain.connect(this.masterFXInput);
+                this.masterFXInput.connect(this.masterFXOutput);
+                this.masterFXOutput.connect(this.masterGain);
                 this.masterGain.connect(this.audioContext.destination);
+                
+                this.trackGain.gain.value = 1;
                 this.masterGain.gain.value = 0.5;
+                
                 this.activeVoices = new Map();
                 this.scheduledCleanups = new Set();
+                this.masterFXNodes = [];
+            }
+
+            updateMasterFX(fx) {
+                // Disconnect and clean up old master FX
+                this.masterFXNodes.forEach(node => {
+                    try {
+                        node.disconnect();
+                    } catch(e) {}
+                });
+                this.masterFXNodes = [];
+                
+                // Disconnect the direct connection
+                try {
+                    this.masterFXInput.disconnect();
+                } catch(e) {}
+                
+                // Apply new master FX
+                const fxInfo = this.applyFX({ output: this.masterFXInput }, fx);
+                this.masterFXNodes = fxInfo.fxNodes || [];
+                
+                // Connect final output
+                fxInfo.output.connect(this.masterFXOutput);
             }
 
             stopVoice(trackId) {
@@ -1851,6 +1985,329 @@
                 return { output, oscillators, nodes, stopTime: maxStopTime };
             }
 
+            createAdditiveDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 150, harmonics = 8, decay = 0.5, decaySpread = 1.5,
+                        evenOdd = 0.5, brightness = 1, attack = 0.001, shape = 1 } = params;
+                
+                const masterGain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                const oscillators = [];
+                const nodes = [masterGain, output];
+                
+                let maxStopTime = 0;
+                
+                for (let i = 1; i <= harmonics; i++) {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    
+                    oscillators.push(osc);
+                    nodes.push(gain);
+                    
+                    osc.frequency.value = pitch * i;
+                    osc.type = 'sine';
+                    
+                    // Even/odd balance
+                    let amplitude;
+                    if (i % 2 === 0) {
+                        amplitude = (1 / i) * evenOdd;
+                    } else {
+                        amplitude = (1 / i) * (1 - evenOdd * 0.5);
+                    }
+                    
+                    // Brightness affects higher harmonics
+                    amplitude *= Math.pow(brightness, (i - 1) * 0.3);
+                    
+                    // Individual decay times
+                    const partialDecay = decay * Math.pow(decaySpread, (i - 1) * 0.15);
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(amplitude * 0.8, now + attack);
+                    
+                    if (shape > 1) {
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + partialDecay);
+                    } else {
+                        gain.gain.linearRampToValueAtTime(0, now + partialDecay * Math.max(0.2, shape));
+                    }
+                    
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    
+                    osc.start(now);
+                    const stopTime = now + partialDecay + 0.1;
+                    osc.stop(stopTime);
+                    maxStopTime = Math.max(maxStopTime, stopTime);
+                }
+                
+                masterGain.connect(output);
+                
+                return { output, oscillators, nodes, stopTime: maxStopTime };
+            }
+
+            createFM2Drum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 300, cRatio = 1, modIndex = 5, indexDecay = 0.2,
+                        feedback = 0, decay = 0.3, chaos = 0, attack = 0.001 } = params;
+                
+                const carrier = this.audioContext.createOscillator();
+                const modulator = this.audioContext.createOscillator();
+                const modGain = this.audioContext.createGain();
+                const feedbackDelay = this.audioContext.createDelay(0.1);
+                const feedbackGain = this.audioContext.createGain();
+                const gain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                
+                const oscillators = [carrier, modulator];
+                const nodes = [modGain, feedbackDelay, feedbackGain, gain, output];
+                
+                carrier.frequency.value = pitch;
+                modulator.frequency.value = pitch / cRatio;
+                
+                // Modulation index envelope
+                const modulationAmount = modIndex * pitch / cRatio;
+                modGain.gain.setValueAtTime(modulationAmount, now);
+                if (modulationAmount > 0) {
+                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, modulationAmount * 0.05), now + indexDecay);
+                }
+                
+                // Feedback routing with chaos
+                if (feedback > 0) {
+                    feedbackDelay.delayTime.value = 0.001;
+                    feedbackGain.gain.value = feedback * (1 + chaos * 0.5);
+                    
+                    carrier.connect(feedbackDelay);
+                    feedbackDelay.connect(feedbackGain);
+                    feedbackGain.connect(modulator.frequency);
+                }
+                
+                // Add chaos (random frequency modulation)
+                if (chaos > 0) {
+                    const chaosFreq = Math.random() * 20 + 5;
+                    const chaosAmount = chaos * pitch * 0.5;
+                    
+                    const chaosLFO = this.audioContext.createOscillator();
+                    const chaosGain = this.audioContext.createGain();
+                    chaosLFO.frequency.value = chaosFreq;
+                    chaosGain.gain.value = chaosAmount;
+                    
+                    chaosGain.gain.setValueAtTime(chaosAmount, now);
+                    chaosGain.gain.exponentialRampToValueAtTime(0.01, now + decay * 0.5);
+                    
+                    chaosLFO.connect(chaosGain);
+                    chaosGain.connect(carrier.frequency);
+                    chaosLFO.start(now);
+                    chaosLFO.stop(now + decay + 0.1);
+                    
+                    oscillators.push(chaosLFO);
+                    nodes.push(chaosGain);
+                }
+                
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                carrier.connect(gain);
+                gain.connect(output);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.7, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                carrier.start(now);
+                modulator.start(now);
+                const stopTime = now + Math.max(decay, indexDecay) + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
+                
+                return { output, oscillators, nodes, stopTime };
+            }
+
+            createKSDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 110, decay = 1.5, brightness = 0.5, damping = 0.5,
+                        stretch = 1, exciter = 0.5, pickPos = 0.5, noise = 0.3 } = params;
+                
+                // Create excitation signal
+                const bufferSize = Math.ceil(this.audioContext.sampleRate / pitch) * 4;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const bufferData = buffer.getChannelData(0);
+                
+                // Mix of noise and impulse based on exciter parameter
+                for (let i = 0; i < bufferSize; i++) {
+                    const noiseVal = (Math.random() * 2 - 1) * noise;
+                    const impulseVal = (i < 10 ? 1 - i / 10 : 0) * (1 - noise);
+                    bufferData[i] = noiseVal + impulseVal;
+                }
+                
+                const excitation = this.audioContext.createBufferSource();
+                excitation.buffer = buffer;
+                
+                // Karplus-Strong delay line
+                const delayTime = (1 / pitch) * stretch;
+                const delayLine = this.audioContext.createDelay(1);
+                delayLine.delayTime.value = delayTime;
+                
+                // Lowpass filter for damping
+                const dampFilter = this.audioContext.createBiquadFilter();
+                dampFilter.type = 'lowpass';
+                dampFilter.frequency.value = Math.min(20000, pitch * 8 * brightness);
+                dampFilter.Q.value = 0.5;
+                
+                // Feedback control
+                const feedbackGain = this.audioContext.createGain();
+                feedbackGain.gain.setValueAtTime(damping, now);
+                feedbackGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                // Pick position filter
+                const pickFilter = this.audioContext.createBiquadFilter();
+                pickFilter.type = 'bandpass';
+                pickFilter.frequency.value = pitch * (1 / pickPos);
+                pickFilter.Q.value = 2;
+                
+                const outputGain = this.audioContext.createGain();
+                outputGain.gain.setValueAtTime(0.8, now);
+                outputGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                // Connect the Karplus-Strong loop
+                excitation.connect(pickFilter);
+                pickFilter.connect(delayLine);
+                delayLine.connect(dampFilter);
+                dampFilter.connect(feedbackGain);
+                feedbackGain.connect(delayLine);
+                dampFilter.connect(outputGain);
+                
+                const sources = [excitation];
+                const nodes = [delayLine, dampFilter, feedbackGain, pickFilter, outputGain];
+                
+                excitation.start(now);
+                excitation.stop(now + 0.01);
+                
+                return { output: outputGain, sources, nodes, stopTime: now + decay + 0.1 };
+            }
+
+            createBuchlaDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 180, decay = 0.4, tone = 1, metallic = 0.3,
+                        impact = 0.5, ring = 0.4, sweep = 0.5, noise = 0.2 } = params;
+                
+                const merger = this.audioContext.createGain();
+                const oscillators = [];
+                const sources = [];
+                const nodes = [merger];
+                
+                // Pitch sweep envelope
+                const sweepAmount = sweep * pitch * 2;
+                
+                // Main tone oscillator
+                const mainOsc = this.audioContext.createOscillator();
+                const mainGain = this.audioContext.createGain();
+                
+                oscillators.push(mainOsc);
+                nodes.push(mainGain);
+                
+                mainOsc.frequency.setValueAtTime(pitch + sweepAmount, now);
+                mainOsc.frequency.exponentialRampToValueAtTime(Math.max(20, pitch), now + decay * 0.3);
+                
+                mainGain.gain.setValueAtTime(0, now);
+                mainGain.gain.linearRampToValueAtTime(0.6 * (1 - metallic), now + 0.001);
+                mainGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                mainOsc.connect(mainGain);
+                mainGain.connect(merger);
+                
+                // Metallic/bell component (inharmonic)
+                if (metallic > 0) {
+                    const ratios = [1, 2.14, 3.05, 4.18, 5.43];
+                    ratios.forEach((ratio, i) => {
+                        const osc = this.audioContext.createOscillator();
+                        const gain = this.audioContext.createGain();
+                        
+                        oscillators.push(osc);
+                        nodes.push(gain);
+                        
+                        osc.frequency.value = pitch * ratio;
+                        
+                        const amp = metallic * (1 / (i + 1)) * 0.3;
+                        const partialDecay = decay * (1 - i * 0.15);
+                        
+                        gain.gain.setValueAtTime(0, now);
+                        gain.gain.linearRampToValueAtTime(amp, now + 0.001);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + partialDecay);
+                        
+                        osc.connect(gain);
+                        gain.connect(merger);
+                        
+                        osc.start(now);
+                        osc.stop(now + partialDecay + 0.1);
+                    });
+                }
+                
+                // Ring modulation
+                if (ring > 0) {
+                    const ringOsc1 = this.audioContext.createOscillator();
+                    const ringOsc2 = this.audioContext.createOscillator();
+                    const ringGain = this.audioContext.createGain();
+                    const ringMod = this.audioContext.createGain();
+                    
+                    oscillators.push(ringOsc1, ringOsc2);
+                    nodes.push(ringGain, ringMod);
+                    
+                    ringOsc1.frequency.value = pitch * 1.4;
+                    ringOsc2.frequency.value = pitch * 2.1;
+                    
+                    ringGain.gain.setValueAtTime(0, now);
+                    ringGain.gain.linearRampToValueAtTime(ring * 0.3, now + 0.001);
+                    ringGain.gain.exponentialRampToValueAtTime(0.01, now + decay * 0.6);
+                    
+                    ringOsc1.connect(ringMod);
+                    ringOsc2.connect(ringMod.gain);
+                    ringMod.connect(ringGain);
+                    ringGain.connect(merger);
+                    
+                    ringOsc1.start(now);
+                    ringOsc2.start(now);
+                    ringOsc1.stop(now + decay * 0.6 + 0.1);
+                    ringOsc2.stop(now + decay * 0.6 + 0.1);
+                }
+                
+                // Impact noise
+                if (noise > 0 || impact > 0) {
+                    const noiseBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * 0.5, this.audioContext.sampleRate);
+                    const noiseData = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < noiseData.length; i++) {
+                        noiseData[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    const noiseSource = this.audioContext.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+                    sources.push(noiseSource);
+                    
+                    const noiseFilter = this.audioContext.createBiquadFilter();
+                    noiseFilter.type = 'bandpass';
+                    noiseFilter.frequency.value = pitch * tone * 2;
+                    noiseFilter.Q.value = 5 + impact * 10;
+                    
+                    const noiseGain = this.audioContext.createGain();
+                    
+                    nodes.push(noiseFilter, noiseGain);
+                    
+                    const noiseAmount = Math.max(noise, impact);
+                    noiseGain.gain.setValueAtTime(0, now);
+                    noiseGain.gain.linearRampToValueAtTime(noiseAmount * 0.5, now + 0.001);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + decay * 0.3);
+                    
+                    noiseSource.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(merger);
+                    
+                    noiseSource.start(now);
+                    noiseSource.stop(now + decay * 0.3 + 0.1);
+                }
+                
+                mainOsc.start(now);
+                mainOsc.stop(now + decay + 0.1);
+                
+                return { output: merger, oscillators, sources, nodes, stopTime: now + decay + 0.1 };
+            }
+
             playDrum(trackId, engine, params, fx, velocity = 1) {
                 if (!trackId || trackId === 'test') {
                     trackId = 'test_' + Date.now();
@@ -1864,7 +2321,11 @@
                     'Snare': () => this.createSnareDrum(params),
                     'Noise': () => this.createNoiseDrum(params),
                     'Modal': () => this.createModalDrum(params),
-                    'Physical': () => this.createPhysicalDrum(params)
+                    'Physical': () => this.createPhysicalDrum(params),
+                    'Additive': () => this.createAdditiveDrum(params),
+                    'FM2': () => this.createFM2Drum(params),
+                    'KS': () => this.createKSDrum(params),
+                    'Buchla': () => this.createBuchlaDrum(params)
                 };
 
                 const createEngine = engineMap[engine];
@@ -1875,7 +2336,7 @@
                     const velocityGain = this.audioContext.createGain();
                     velocityGain.gain.value = velocity;
                     fxInfo.output.connect(velocityGain);
-                    velocityGain.connect(this.masterGain);
+                    velocityGain.connect(this.trackGain);
                     
                     let fxTailTime = 0;
                     if (fx.delay > 0) {
@@ -1933,7 +2394,11 @@
                     'Snare': () => this.createSnareDrumWithAutomation(slideParams, targetParams, duration),
                     'Noise': () => this.createNoiseDrumWithAutomation(slideParams, targetParams, duration),
                     'Modal': () => this.createModalDrumWithAutomation(slideParams, targetParams, duration),
-                    'Physical': () => this.createPhysicalDrumWithAutomation(slideParams, targetParams, duration)
+                    'Physical': () => this.createPhysicalDrumWithAutomation(slideParams, targetParams, duration),
+                    'Additive': () => this.createAdditiveDrumWithAutomation(slideParams, targetParams, duration),
+                    'FM2': () => this.createFM2DrumWithAutomation(slideParams, targetParams, duration),
+                    'KS': () => this.createKSDrumWithAutomation(slideParams, targetParams, duration),
+                    'Buchla': () => this.createBuchlaDrumWithAutomation(slideParams, targetParams, duration)
                 };
                 
                 const createEngine = engineMap[engine];
@@ -1944,7 +2409,7 @@
                     const velocityGain = this.audioContext.createGain();
                     velocityGain.gain.value = velocity;
                     fxInfo.output.connect(velocityGain);
-                    velocityGain.connect(this.masterGain);
+                    velocityGain.connect(this.trackGain);
                     
                     let fxTailTime = 0;
                     if (startFX.delay > 0) {
@@ -2140,6 +2605,101 @@
             createPhysicalDrumWithAutomation(startParams, targetParams, duration) {
                 return this.createPhysicalDrum(startParams);
             }
+
+            createAdditiveDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createAdditiveDrum(startParams);
+            }
+
+            createFM2DrumWithAutomation(startParams, targetParams, duration) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 300, cRatio = 1, modIndex = 5, indexDecay = 0.2,
+                        feedback = 0, decay = 0.3, chaos = 0, attack = 0.001 } = startParams;
+                
+                const carrier = this.audioContext.createOscillator();
+                const modulator = this.audioContext.createOscillator();
+                const modGain = this.audioContext.createGain();
+                const feedbackDelay = this.audioContext.createDelay(0.1);
+                const feedbackGain = this.audioContext.createGain();
+                const gain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                
+                const oscillators = [carrier, modulator];
+                const nodes = [modGain, feedbackDelay, feedbackGain, gain, output];
+                
+                const targetPitch = targetParams.pitch !== undefined ? targetParams.pitch : pitch;
+                const targetCRatio = targetParams.cRatio !== undefined ? targetParams.cRatio : cRatio;
+                
+                carrier.frequency.setValueAtTime(pitch, now);
+                if (Math.abs(targetPitch - pitch) > 1) {
+                    carrier.frequency.exponentialRampToValueAtTime(targetPitch, now + duration);
+                }
+                
+                modulator.frequency.setValueAtTime(pitch / cRatio, now);
+                if (Math.abs(targetPitch - pitch) > 1 || Math.abs(targetCRatio - cRatio) > 0.01) {
+                    modulator.frequency.exponentialRampToValueAtTime(targetPitch / targetCRatio, now + duration);
+                }
+                
+                const modulationAmount = modIndex * pitch / cRatio;
+                modGain.gain.setValueAtTime(modulationAmount, now);
+                if (modulationAmount > 0) {
+                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, modulationAmount * 0.05), now + indexDecay);
+                }
+                
+                if (feedback > 0) {
+                    feedbackDelay.delayTime.value = 0.001;
+                    feedbackGain.gain.value = feedback * (1 + chaos * 0.5);
+                    
+                    carrier.connect(feedbackDelay);
+                    feedbackDelay.connect(feedbackGain);
+                    feedbackGain.connect(modulator.frequency);
+                }
+                
+                if (chaos > 0) {
+                    const chaosFreq = Math.random() * 20 + 5;
+                    const chaosAmount = chaos * pitch * 0.5;
+                    
+                    const chaosLFO = this.audioContext.createOscillator();
+                    const chaosGain = this.audioContext.createGain();
+                    chaosLFO.frequency.value = chaosFreq;
+                    chaosGain.gain.value = chaosAmount;
+                    
+                    chaosGain.gain.setValueAtTime(chaosAmount, now);
+                    chaosGain.gain.exponentialRampToValueAtTime(0.01, now + decay * 0.5);
+                    
+                    chaosLFO.connect(chaosGain);
+                    chaosGain.connect(carrier.frequency);
+                    chaosLFO.start(now);
+                    chaosLFO.stop(now + decay + 0.1);
+                    
+                    oscillators.push(chaosLFO);
+                    nodes.push(chaosGain);
+                }
+                
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                carrier.connect(gain);
+                gain.connect(output);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.7, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                carrier.start(now);
+                modulator.start(now);
+                const stopTime = now + Math.max(decay, indexDecay) + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
+                
+                return { output, oscillators, nodes, stopTime };
+            }
+
+            createKSDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createKSDrum(startParams);
+            }
+
+            createBuchlaDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createBuchlaDrum(startParams);
+            }
         }
 
         // Pattern Bank System
@@ -2242,6 +2802,7 @@
             conditionModalTrack: null,
             globalMorphAmount: 0,
             currentPattern: 0,
+            masterFX: {},
             tracks: {
                 kick: {
                     name: 'KICK',
@@ -2548,6 +3109,7 @@
                 version: '1.0',
                 tempo: state.tempo,
                 currentPattern: state.currentPattern,
+                masterFX: { ...state.masterFX },
                 tracks: {},
                 patterns: patternBank.getAllPatterns()
             };
@@ -2581,6 +3143,12 @@
             document.getElementById('tempo-input').value = state.tempo;
             
             state.currentPattern = stateData.currentPattern || 0;
+
+            if (stateData.masterFX) {
+                state.masterFX = { ...stateData.masterFX };
+                audioEngine.updateMasterFX(state.masterFX);
+                renderMasterFX();
+            }
 
             if (stateData.tracks) {
                 Object.entries(stateData.tracks).forEach(([trackId, trackData]) => {
@@ -2744,6 +3312,11 @@
             audioEngine = new DrumSynthEngine();
             patternBank = new PatternBank();
             
+            // Initialize master FX with defaults
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                state.masterFX[key] = spec.default;
+            });
+            
             Object.keys(state.tracks).forEach(trackId => {
                 initializeTrackDefaults(trackId);
             });
@@ -2751,6 +3324,7 @@
             renderPatternBank();
             renderTracks();
             renderSidebar();
+            renderMasterFX();
             setupEventListeners();
         }
 
@@ -3109,6 +3683,53 @@
                 paramDiv.appendChild(valueDiv);
                 container.appendChild(paramDiv);
             });
+        }
+
+        function renderMasterFX() {
+            const container = document.getElementById('master-fx-container');
+            container.innerHTML = '';
+
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                const paramDiv = document.createElement('div');
+                paramDiv.className = 'param';
+                
+                const label = document.createElement('div');
+                label.className = 'param-label';
+                label.textContent = spec.label;
+                
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'param-value';
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.className = 'slider';
+                slider.min = spec.min;
+                slider.max = spec.max;
+                slider.step = spec.step;
+                slider.value = state.masterFX[key] !== undefined ? state.masterFX[key] : spec.default;
+                
+                const display = document.createElement('div');
+                display.className = 'value-display';
+                const decimals = spec.step < 0.1 ? 2 : spec.step < 1 ? 1 : 0;
+                display.textContent = parseFloat(slider.value).toFixed(decimals);
+                
+                slider.oninput = (e) => {
+                    const value = parseFloat(e.target.value);
+                    display.textContent = value.toFixed(decimals);
+                    updateMasterFX(key, value);
+                };
+                
+                valueDiv.appendChild(slider);
+                valueDiv.appendChild(display);
+                paramDiv.appendChild(label);
+                paramDiv.appendChild(valueDiv);
+                container.appendChild(paramDiv);
+            });
+        }
+
+        function updateMasterFX(key, value) {
+            state.masterFX[key] = value;
+            audioEngine.updateMasterFX(state.masterFX);
         }
 
         function setupEventListeners() {
