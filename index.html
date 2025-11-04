@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>stepper enhanced</title>
+    <title>stepper</title>
     <style>
         * {
             margin: 0;
@@ -15,14 +15,12 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #0a0a0a;
             color: #e0e0e0;
-            overflow-x: hidden;
-            overflow-y: auto;
+            overflow: hidden;
             user-select: none;
-            min-height: 100vh;
         }
 
         .app {
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 20px;
@@ -96,12 +94,10 @@
             color: #000;
         }
 
-        /* Tempo Knob */
         .tempo {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .tempo-label {
@@ -110,49 +106,15 @@
             font-weight: 600;
         }
 
-        .tempo-knob-container {
-            position: relative;
-            width: 60px;
-            height: 60px;
-        }
-
-        .tempo-knob {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #2a2a2a, #1a1a1a);
-            border: 2px solid #333;
-            position: relative;
-            cursor: grab;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .tempo-knob:active {
-            cursor: grabbing;
-        }
-
-        .tempo-knob::after {
-            content: '';
-            position: absolute;
-            width: 4px;
-            height: 20px;
-            background: #4a9eff;
-            border-radius: 2px;
-            top: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 0 8px #4a9eff;
-        }
-
-        .tempo-value {
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
+        .tempo input {
+            width: 80px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 12px;
+            border-radius: 4px;
             font-size: 14px;
             font-weight: 600;
-            color: #4a9eff;
-            white-space: nowrap;
         }
 
         .bar-indicator {
@@ -165,268 +127,10 @@
             border-radius: 4px;
         }
 
-        /* Pattern Sequencer */
-        .pattern-sequencer-panel {
-            background: #151515;
-            border: 1px solid #252525;
-            border-radius: 6px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .pattern-sequencer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #252525;
-        }
-
-        .pattern-sequencer-title {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #666;
-        }
-
-        .pattern-sequencer-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .pattern-mode-select {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: #e0e0e0;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            cursor: pointer;
-        }
-
-        #pattern-seq-toggle.active {
-            background: #ffffff;
-            border-color: #ffffff;
-            color: #000;
-        }
-
-        .pattern-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 10px;
-        }
-
-        .pattern-cell {
-            background: #1a1a1a;
-            border: 1px solid #252525;
-            border-radius: 4px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .pattern-cell:hover {
-            border-color: #444;
-        }
-
-        .pattern-cell.active {
-            border-color: #4a9eff;
-            box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
-        }
-
-        .pattern-cell.selected {
-            border-color: #ffd700;
-            background: #2a2510;
-        }
-
-        .pattern-cell.has-data {
-            background: #1f1f1f;
-            border-color: #333;
-        }
-
-        .pattern-cell.selected.has-data {
-            background: #2a2510;
-            border-color: #ffd700;
-        }
-
-        .pattern-cell-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pattern-number {
-            font-size: 10px;
-            font-weight: 700;
-            color: #666;
-            letter-spacing: 1px;
-        }
-
-        .pattern-header-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .pattern-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #333;
-        }
-
-        .pattern-cell.has-data .pattern-indicator {
-            background: #4a9eff;
-        }
-
-        .pattern-loop-btn {
-            width: 20px;
-            height: 20px;
-            background: #252525;
-            border: 1px solid #333;
-            border-radius: 3px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            font-weight: 700;
-            color: #666;
-            transition: all 0.2s;
-        }
-
-        .pattern-loop-btn:hover {
-            border-color: #4a9eff;
-            color: #4a9eff;
-        }
-
-        .pattern-loop-btn.active {
-            background: #4a9eff;
-            border-color: #4a9eff;
-            color: #000;
-        }
-
-        .pattern-buttons {
-            display: flex;
-            gap: 4px;
-        }
-
-        .pattern-mini-btn {
-            flex: 1;
-            background: #252525;
-            border: 1px solid #333;
-            color: #999;
-            padding: 6px 4px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 8px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
-
-        .pattern-mini-btn:hover {
-            border-color: #4a9eff;
-            color: #4a9eff;
-        }
-
-        .pattern-mini-btn.copy-active {
-            background: #4a9eff;
-            border-color: #4a9eff;
-            color: #000;
-        }
-
-        .pattern-buttons-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-        }
-
-        .pattern-select-row {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .pattern-select-label {
-            font-size: 8px;
-            color: #666;
-            font-weight: 600;
-            min-width: 35px;
-        }
-
-        .pattern-dropdown {
-            flex: 1;
-            background: #252525;
-            border: 1px solid #333;
-            color: #e0e0e0;
-            padding: 4px;
-            border-radius: 3px;
-            font-size: 9px;
-            cursor: pointer;
-        }
-
-        .pattern-slider-row {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .pattern-mini-slider {
-            flex: 1;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 2px;
-            background: #252525;
-            outline: none;
-            border-radius: 2px;
-            cursor: pointer;
-        }
-
-        .pattern-mini-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 10px;
-            height: 10px;
-            background: #4a9eff;
-            cursor: grab;
-            border-radius: 50%;
-        }
-
-        .pattern-mini-slider::-moz-range-thumb {
-            width: 10px;
-            height: 10px;
-            background: #4a9eff;
-            cursor: grab;
-            border-radius: 50%;
-            border: none;
-        }
-
-        .pattern-value-display {
-            font-size: 9px;
-            color: #4a9eff;
-            min-width: 30px;
-            text-align: right;
-            font-weight: 600;
-        }
-
         .main-content {
             display: flex;
             gap: 20px;
             flex: 1;
-            min-height: 400px;
             overflow: hidden;
             position: relative;
         }
@@ -438,13 +142,184 @@
             gap: 12px;
             overflow-y: auto;
             padding-right: 10px;
-            min-height: 200px;
         }
 
         /* Mobile styles */
         @media (max-width: 768px) {
-            .pattern-grid {
-                grid-template-columns: repeat(4, 1fr);
+            .app {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 0;
+            }
+
+            .title {
+                font-size: 12px;
+            }
+
+            .transport {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+
+            .btn {
+                padding: 10px 16px;
+                font-size: 10px;
+            }
+
+            .tempo input {
+                width: 60px;
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .bar-indicator {
+                padding: 10px;
+                font-size: 10px;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .tracks-panel {
+                padding: 10px;
+            }
+
+            .side-panel {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                background: #0a0a0a;
+                z-index: 1000;
+                padding: 15px;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                overflow-y: auto;
+            }
+
+            .side-panel.visible {
+                transform: translateX(0);
+            }
+
+            .track {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .track-header {
+                min-width: auto;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .track-name {
+                cursor: pointer;
+                padding: 8px;
+                background: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 3px;
+                transition: all 0.2s;
+            }
+
+            .track-name:hover {
+                border-color: #4a9eff;
+                color: #4a9eff;
+            }
+
+            .sequencer {
+                flex-direction: row;
+                gap: 3px;
+                overflow-x: auto;
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .step-container {
+                flex-direction: column;
+                gap: 3px;
+                min-width: 40px;
+            }
+
+            .lock-buttons {
+                gap: 2px;
+            }
+
+            .lock-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 8px;
+            }
+
+            .step {
+                min-height: 50px;
+                width: 40px;
+            }
+
+            .step-condition {
+                min-width: auto;
+                width: 40px;
+                font-size: 8px;
+                padding: 3px 2px;
+            }
+
+            .sequencer::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .sequencer::-webkit-scrollbar-track {
+                background: #0a0a0a;
+                border-radius: 3px;
+            }
+
+            .sequencer::-webkit-scrollbar-thumb {
+                background: #4a9eff;
+                border-radius: 3px;
+            }
+
+            .section-title {
+                font-size: 9px;
+            }
+
+            .param-label {
+                font-size: 9px;
+            }
+
+            .value-display {
+                font-size: 10px;
+                min-width: 40px;
+            }
+
+            .engine-select {
+                gap: 6px;
+            }
+
+            .engine-btn {
+                padding: 6px 10px;
+                font-size: 9px;
+            }
+
+            .fx-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                max-width: 90%;
+                padding: 20px;
+            }
+
+            .condition-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
@@ -482,7 +357,6 @@
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 1px;
-            cursor: pointer;
         }
 
         .track-controls {
@@ -954,22 +828,6 @@
             color: #4a9eff;
         }
 
-        .modal-input {
-            width: 100%;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: #e0e0e0;
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
         .global-controls {
             background: #151515;
             border: 1px solid #252525;
@@ -989,31 +847,11 @@
                 <div class="bar-indicator" id="bar-indicator">Bar: 1/4</div>
                 <div class="tempo">
                     <span class="tempo-label">TEMPO</span>
-                    <div class="tempo-knob-container">
-                        <div class="tempo-knob" id="tempo-knob"></div>
-                        <div class="tempo-value" id="tempo-value">128</div>
-                    </div>
+                    <input type="number" id="tempo-input" value="128" min="40" max="300">
                 </div>
                 <button class="btn" id="play-btn">PLAY</button>
                 <button class="btn secondary" id="reset-btn">RESET</button>
             </div>
-        </div>
-
-        <div class="pattern-sequencer-panel">
-            <div class="pattern-sequencer-header">
-                <div class="pattern-sequencer-title">PATTERN SEQUENCER</div>
-                <div class="pattern-sequencer-controls">
-                    <select class="pattern-mode-select" id="pattern-mode">
-                        <option value="forward">FORWARD</option>
-                        <option value="pingpong">FORWARD & BACK</option>
-                        <option value="random">RANDOM</option>
-                        <option value="instant">INSTANT</option>
-                        <option value="next">NEXT</option>
-                    </select>
-                    <button class="btn secondary" id="pattern-seq-toggle">ENABLE</button>
-                </div>
-            </div>
-            <div class="pattern-grid" id="pattern-grid"></div>
         </div>
 
         <div class="main-content">
@@ -1095,11 +933,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="global-controls">
-            <div class="section-title">MASTER FX</div>
-            <div class="fx-controls" id="master-fx-container"></div>
-        </div>
     </div>
 
     <div class="modal" id="condition-modal">
@@ -1109,20 +942,7 @@
         </div>
     </div>
 
-    <div class="modal" id="custom-steps-modal">
-        <div class="modal-content">
-            <div class="modal-title">CUSTOM STEPS</div>
-            <input type="number" class="modal-input" id="custom-steps-input" placeholder="Enter step count" min="1" max="9999">
-            <div class="modal-buttons">
-                <button class="btn" id="custom-steps-ok">OK</button>
-                <button class="btn secondary" id="custom-steps-cancel">CANCEL</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        console.log('Starting initialization...');
-
         // Engine Definitions
         const ENGINE_SPECS = {
             '808': {
@@ -1222,64 +1042,969 @@
             glitchRate: { label: 'Glitch Rate', min: 0.02, max: 0.5, step: 0.01, default: 0.1 }
         };
 
-        // Audio Engine with FX (simplified for initialization)
+        // Audio Engine with FX
         class DrumSynthEngine {
             constructor() {
-                console.log('Creating audio engine...');
-                try {
-                    this.audioContext = null;
-                    this.masterGain = null;
-                    this.masterFXInput = null;
-                    this.masterFXOutput = null;
-                    this.masterFXNodes = [];
-                    this.activeVoices = new Map();
-                    this.scheduledCleanups = new Set();
-                    this.initialized = false;
-                    console.log('Audio engine created (not initialized yet)');
-                } catch (e) {
-                    console.error('Error creating audio engine:', e);
-                }
-            }
-
-            init() {
-                if (this.initialized) return;
-                
-                try {
-                    console.log('Initializing audio context...');
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.masterGain = this.audioContext.createGain();
-                    this.masterGain.gain.value = 0.5;
-                    
-                    this.masterFXInput = this.audioContext.createGain();
-                    this.masterFXOutput = this.masterGain;
-                    
-                    this.masterFXInput.connect(this.masterFXOutput);
-                    this.masterGain.connect(this.audioContext.destination);
-                    
-                    this.initialized = true;
-                    console.log('Audio engine initialized successfully');
-                } catch (e) {
-                    console.error('Error initializing audio engine:', e);
-                }
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.audioContext.createGain();
+                this.masterGain.connect(this.audioContext.destination);
+                this.masterGain.gain.value = 0.5;
+                this.activeVoices = new Map(); // Track active voices per track
+                this.scheduledCleanups = new Set(); // Track cleanup timeouts
             }
 
             stopVoice(trackId) {
-                // Simplified for now
+                if (this.activeVoices.has(trackId)) {
+                    const voice = this.activeVoices.get(trackId);
+                    const now = this.audioContext.currentTime;
+                    
+                    // Quick fade out on the output gain to stop the direct sound
+                    if (voice.outputGain && voice.outputGain.gain) {
+                        voice.outputGain.gain.cancelScheduledValues(now);
+                        voice.outputGain.gain.setValueAtTime(voice.outputGain.gain.value, now);
+                        voice.outputGain.gain.linearRampToValueAtTime(0, now + 0.02);
+                    }
+                    
+                    // Stop oscillators and buffer sources immediately
+                    setTimeout(() => {
+                        if (voice.oscillators) {
+                            voice.oscillators.forEach(osc => {
+                                try {
+                                    osc.stop();
+                                } catch(e) {}
+                            });
+                        }
+                        if (voice.sources) {
+                            voice.sources.forEach(src => {
+                                try {
+                                    src.stop();
+                                } catch(e) {}
+                            });
+                        }
+                    }, 25);
+                    
+                    // Don't disconnect nodes immediately - let them decay naturally
+                    // They'll be cleaned up by the scheduled cleanup timeout
+                    
+                    this.activeVoices.delete(trackId);
+                }
             }
 
-            updateMasterFX(fx) {
-                // Simplified for now
+            scheduleCleanup(nodes, stopTime) {
+                const cleanupTime = Math.max(0, (stopTime - this.audioContext.currentTime) * 1000 + 100);
+                const timeoutId = setTimeout(() => {
+                    nodes.forEach(node => {
+                        try {
+                            if (node.stop) node.stop();
+                            node.disconnect();
+                        } catch(e) {}
+                    });
+                    this.scheduledCleanups.delete(timeoutId);
+                }, cleanupTime);
+                this.scheduledCleanups.add(timeoutId);
+            }
+
+            createReverbImpulse(size = 2) {
+                const sampleRate = this.audioContext.sampleRate;
+                const length = sampleRate * size;
+                const impulse = this.audioContext.createBuffer(2, length, sampleRate);
+                
+                for (let channel = 0; channel < 2; channel++) {
+                    const channelData = impulse.getChannelData(channel);
+                    for (let i = 0; i < length; i++) {
+                        channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+                    }
+                }
+                
+                return impulse;
+            }
+
+            applyFX(voiceInfo, fx) {
+                let current = voiceInfo.output;
+                const now = this.audioContext.currentTime;
+                const fxNodes = [];
+                
+                // Wasp Filter
+                if (fx.waspFilter > 0) {
+                    const preDrive = this.audioContext.createWaveShaper();
+                    const driveCurve = new Float32Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const x = (i - 128) / 128;
+                        driveCurve[i] = Math.tanh(x * (fx.waspDrive || 2)) * 0.9;
+                    }
+                    preDrive.curve = driveCurve;
+                    
+                    const filter1 = this.audioContext.createBiquadFilter();
+                    const filter2 = this.audioContext.createBiquadFilter();
+                    const filter3 = this.audioContext.createBiquadFilter();
+                    const filter4 = this.audioContext.createBiquadFilter();
+                    
+                    [filter1, filter2, filter3, filter4].forEach(f => {
+                        f.type = 'lowpass';
+                        f.frequency.value = fx.waspFreq || 2000;
+                        f.Q.value = (fx.waspRes || 5) / 4;
+                    });
+                    
+                    const waspWet = this.audioContext.createGain();
+                    const waspDry = this.audioContext.createGain();
+                    const waspMerger = this.audioContext.createGain();
+                    
+                    waspWet.gain.value = fx.waspFilter;
+                    waspDry.gain.value = 1 - fx.waspFilter * 0.7;
+                    
+                    current.connect(preDrive);
+                    preDrive.connect(filter1);
+                    filter1.connect(filter2);
+                    filter2.connect(filter3);
+                    filter3.connect(filter4);
+                    filter4.connect(waspWet);
+                    waspWet.connect(waspMerger);
+                    
+                    current.connect(waspDry);
+                    waspDry.connect(waspMerger);
+                    
+                    fxNodes.push(preDrive, filter1, filter2, filter3, filter4, waspWet, waspDry, waspMerger);
+                    current = waspMerger;
+                }
+                
+                // Drive
+                if (fx.drive > 1) {
+                    const driveNode = this.audioContext.createWaveShaper();
+                    const curve = new Float32Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const x = (i - 128) / 128;
+                        curve[i] = Math.tanh(x * fx.drive) / Math.tanh(fx.drive);
+                    }
+                    driveNode.curve = curve;
+                    
+                    current.connect(driveNode);
+                    fxNodes.push(driveNode);
+                    current = driveNode;
+                }
+                
+                // Distortion
+                if (fx.distortion > 0) {
+                    const distNode = this.audioContext.createWaveShaper();
+                    const amount = fx.distortion * 50;
+                    const curve = new Float32Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const x = (i - 128) / 128;
+                        curve[i] = (Math.exp(amount * x) - Math.exp(-amount * x)) / 
+                                   (Math.exp(amount * x) + Math.exp(-amount * x));
+                    }
+                    distNode.curve = curve;
+                    
+                    const distGain = this.audioContext.createGain();
+                    distGain.gain.value = 1 / (1 + fx.distortion);
+                    
+                    current.connect(distNode);
+                    distNode.connect(distGain);
+                    fxNodes.push(distNode, distGain);
+                    current = distGain;
+                }
+                
+                // Resonator
+                if (fx.resonator > 0) {
+                    const resDelay = this.audioContext.createDelay(1);
+                    const resFilter = this.audioContext.createBiquadFilter();
+                    const resFeedback = this.audioContext.createGain();
+                    const resWet = this.audioContext.createGain();
+                    const resDry = this.audioContext.createGain();
+                    const resMerger = this.audioContext.createGain();
+                    
+                    const delayTime = 1 / (fx.resFreq || 440);
+                    resDelay.delayTime.value = delayTime;
+                    
+                    resFilter.type = 'bandpass';
+                    resFilter.frequency.value = fx.resFreq || 440;
+                    resFilter.Q.value = 20;
+                    
+                    resFeedback.gain.value = 0.85 * fx.resonator;
+                    
+                    const resDecay = fx.resDecay || 0.3;
+                    resFeedback.gain.setValueAtTime(0.85 * fx.resonator, now);
+                    resFeedback.gain.exponentialRampToValueAtTime(0.01, now + resDecay);
+                    
+                    resWet.gain.value = fx.resonator * 0.7;
+                    resDry.gain.value = 1 - fx.resonator * 0.3;
+                    
+                    current.connect(resDelay);
+                    resDelay.connect(resFilter);
+                    resFilter.connect(resFeedback);
+                    resFeedback.connect(resDelay);
+                    resFilter.connect(resWet);
+                    resWet.connect(resMerger);
+                    
+                    current.connect(resDry);
+                    resDry.connect(resMerger);
+                    
+                    fxNodes.push(resDelay, resFilter, resFeedback, resWet, resDry, resMerger);
+                    current = resMerger;
+                }
+                
+                // Delay
+                if (fx.delay > 0) {
+                    const delayNode = this.audioContext.createDelay(2);
+                    delayNode.delayTime.value = fx.delayTime || 0.25;
+                    
+                    const feedback = this.audioContext.createGain();
+                    feedback.gain.value = 0.4 * fx.delay;
+                    
+                    const delayGain = this.audioContext.createGain();
+                    delayGain.gain.value = fx.delay * 0.5;
+                    
+                    const merger = this.audioContext.createGain();
+                    
+                    current.connect(delayNode);
+                    delayNode.connect(feedback);
+                    feedback.connect(delayNode);
+                    delayNode.connect(delayGain);
+                    delayGain.connect(merger);
+                    
+                    current.connect(merger);
+                    fxNodes.push(delayNode, feedback, delayGain, merger);
+                    current = merger;
+                }
+                
+                // Reverb
+                if (fx.reverb > 0) {
+                    const reverbNode = this.audioContext.createConvolver();
+                    reverbNode.buffer = this.createReverbImpulse(fx.reverbSize || 2);
+                    
+                    const reverbGain = this.audioContext.createGain();
+                    reverbGain.gain.value = fx.reverb * 0.4;
+                    
+                    const dryGain = this.audioContext.createGain();
+                    dryGain.gain.value = 1;
+                    
+                    const merger = this.audioContext.createGain();
+                    
+                    current.connect(reverbNode);
+                    reverbNode.connect(reverbGain);
+                    reverbGain.connect(merger);
+                    
+                    current.connect(dryGain);
+                    dryGain.connect(merger);
+                    
+                    fxNodes.push(reverbNode, reverbGain, dryGain, merger);
+                    current = merger;
+                }
+                
+                // Glitch
+                if (fx.glitch > 0 && Math.random() < fx.glitch) {
+                    const glitchGain = this.audioContext.createGain();
+                    const stutterTime = fx.glitchRate || 0.1;
+                    const repeats = Math.floor(1 + Math.random() * 3);
+                    
+                    glitchGain.gain.setValueAtTime(1, now);
+                    
+                    for (let i = 0; i < repeats; i++) {
+                        const onTime = now + (stutterTime * i * 2);
+                        const offTime = onTime + stutterTime * 0.5;
+                        
+                        glitchGain.gain.setValueAtTime(0, offTime);
+                        glitchGain.gain.setValueAtTime(1, offTime + stutterTime * 0.5);
+                    }
+                    
+                    current.connect(glitchGain);
+                    fxNodes.push(glitchGain);
+                    current = glitchGain;
+                }
+                
+                return { output: current, fxNodes };
+            }
+
+            create808Kick(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 1, pitchDecay = 0.05, decay = 0.5, punch = 1, drive = 1, 
+                        sub = 0.3, click = 0, attack = 0.001 } = params;
+                
+                const osc = this.audioContext.createOscillator();
+                const subOsc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                const subGain = this.audioContext.createGain();
+                const merger = this.audioContext.createGain();
+                
+                const oscillators = [osc, subOsc];
+                const nodes = [gain, subGain, merger];
+                
+                const startFreq = 150 * pitch;
+                const endFreq = 40 * pitch;
+                osc.frequency.setValueAtTime(startFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), now + pitchDecay * punch);
+                
+                subOsc.frequency.setValueAtTime(startFreq * 0.5, now);
+                subOsc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq * 0.5), now + pitchDecay * punch);
+                
+                if (click > 0) {
+                    const clickOsc = this.audioContext.createOscillator();
+                    const clickGain = this.audioContext.createGain();
+                    clickOsc.type = 'square';
+                    clickOsc.frequency.value = startFreq * 8;
+                    clickGain.gain.setValueAtTime(click, now);
+                    clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.01);
+                    clickOsc.connect(clickGain);
+                    clickGain.connect(merger);
+                    clickOsc.start(now);
+                    clickOsc.stop(now + 0.02);
+                    oscillators.push(clickOsc);
+                    nodes.push(clickGain);
+                }
+                
+                const driveNode = this.audioContext.createWaveShaper();
+                const curve = new Float32Array(256);
+                for (let i = 0; i < 256; i++) {
+                    const x = (i - 128) / 128;
+                    curve[i] = Math.tanh(x * drive) * 0.8;
+                }
+                driveNode.curve = curve;
+                nodes.push(driveNode);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(1, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                subGain.gain.setValueAtTime(0, now);
+                subGain.gain.linearRampToValueAtTime(sub, now + attack);
+                subGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                osc.connect(driveNode);
+                driveNode.connect(gain);
+                subOsc.connect(subGain);
+                gain.connect(merger);
+                subGain.connect(merger);
+                
+                osc.start(now);
+                subOsc.start(now);
+                const stopTime = now + decay + 0.1;
+                osc.stop(stopTime);
+                subOsc.stop(stopTime);
+                
+                return { output: merger, oscillators, nodes, stopTime };
+            }
+
+            createFMDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 200, fmRatio = 1.6, fmAmount = 180, fmDecay = 0.15, decay = 0.15, 
+                        tone = 0.8, filterQ = 1, attack = 0.001 } = params;
+                
+                const carrier = this.audioContext.createOscillator();
+                const modulator = this.audioContext.createOscillator();
+                const modGain = this.audioContext.createGain();
+                const gain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                
+                const oscillators = [carrier, modulator];
+                const nodes = [modGain, gain, output];
+                
+                carrier.frequency.value = pitch;
+                modulator.frequency.value = pitch * fmRatio;
+                
+                modGain.gain.setValueAtTime(fmAmount, now);
+                if (fmAmount > 0) {
+                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, fmAmount * 0.1), now + fmDecay);
+                }
+                
+                if (tone > 0) {
+                    const filter = this.audioContext.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = Math.min(20000, 8000 * tone);
+                    filter.Q.value = filterQ;
+                    carrier.connect(filter);
+                    filter.connect(gain);
+                    nodes.push(filter);
+                } else {
+                    carrier.connect(gain);
+                }
+                
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                gain.connect(output);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.8, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                carrier.start(now);
+                modulator.start(now);
+                const stopTime = now + Math.max(decay, fmDecay) + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
+                
+                return { output, oscillators, nodes, stopTime };
+            }
+
+            createSnareDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 200, fmRatio = 1.6, fmAmount = 180, toneDecay = 0.08, 
+                        noiseAmount = 0.65, noiseDecay = 0.12, snap = 1.5, tone = 1.2 } = params;
+                
+                const merger = this.audioContext.createGain();
+                const oscillators = [];
+                const sources = [];
+                const nodes = [merger];
+                
+                const carrier = this.audioContext.createOscillator();
+                const modulator = this.audioContext.createOscillator();
+                const modGain = this.audioContext.createGain();
+                const toneGain = this.audioContext.createGain();
+                
+                oscillators.push(carrier, modulator);
+                nodes.push(modGain, toneGain);
+                
+                carrier.frequency.value = pitch;
+                modulator.frequency.value = pitch * fmRatio;
+                modGain.gain.setValueAtTime(fmAmount, now);
+                if (fmAmount > 0) {
+                    modGain.gain.exponentialRampToValueAtTime(1, now + toneDecay);
+                }
+                
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                carrier.connect(toneGain);
+                
+                toneGain.gain.setValueAtTime(0, now);
+                toneGain.gain.linearRampToValueAtTime(0.6 * (1 - noiseAmount), now + 0.001);
+                toneGain.gain.exponentialRampToValueAtTime(0.01, now + toneDecay);
+                
+                let maxStopTime = toneDecay;
+                
+                if (noiseAmount > 0) {
+                    const bufferSize = this.audioContext.sampleRate * 2;
+                    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    const noise = this.audioContext.createBufferSource();
+                    noise.buffer = buffer;
+                    sources.push(noise);
+                    
+                    const noiseFilter = this.audioContext.createBiquadFilter();
+                    noiseFilter.type = 'highpass';
+                    noiseFilter.frequency.value = Math.min(20000, Math.max(100, 3000 * tone));
+                    noiseFilter.Q.value = snap * 3;
+                    
+                    const noiseGain = this.audioContext.createGain();
+                    
+                    nodes.push(noiseFilter, noiseGain);
+                    
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    
+                    noiseGain.gain.setValueAtTime(0, now);
+                    noiseGain.gain.linearRampToValueAtTime(0.7 * noiseAmount, now + 0.001);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + noiseDecay);
+                    
+                    noiseGain.connect(merger);
+                    noise.start(now);
+                    noise.stop(now + noiseDecay + 0.1);
+                    maxStopTime = Math.max(maxStopTime, noiseDecay);
+                }
+                
+                toneGain.connect(merger);
+                
+                carrier.start(now);
+                modulator.start(now);
+                const stopTime = now + maxStopTime + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
+                
+                return { output: merger, oscillators, sources, nodes, stopTime };
+            }
+
+            createNoiseDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { decay = 0.04, tone = 1.8, spread = 12, attack = 0.001, 
+                        shape = 1, density = 1, filterType = 1 } = params;
+                
+                const bufferSize = this.audioContext.sampleRate * 2;
+                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const output = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    if (density === 0 || Math.random() < density) {
+                        output[i] = Math.random() * 2 - 1;
+                    } else {
+                        output[i] = 0;
+                    }
+                }
+                
+                const noise = this.audioContext.createBufferSource();
+                noise.buffer = buffer;
+                
+                const sources = [noise];
+                const gain = this.audioContext.createGain();
+                const outputGain = this.audioContext.createGain();
+                const nodes = [gain, outputGain];
+                
+                if (tone > 0 || spread > 0) {
+                    const filter = this.audioContext.createBiquadFilter();
+                    const filterTypes = ['lowpass', 'highpass', 'bandpass'];
+                    filter.type = filterTypes[Math.round(filterType)];
+                    filter.frequency.value = Math.min(20000, Math.max(100, 4000 * tone));
+                    filter.Q.value = spread;
+                    
+                    nodes.push(filter);
+                    noise.connect(filter);
+                    filter.connect(gain);
+                } else {
+                    noise.connect(gain);
+                }
+                
+                gain.connect(outputGain);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.6, now + attack);
+                
+                if (shape > 1) {
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                } else {
+                    gain.gain.linearRampToValueAtTime(0, now + decay * Math.max(0.1, shape));
+                }
+                
+                noise.start(now);
+                const stopTime = now + decay + 0.1;
+                noise.stop(stopTime);
+                
+                return { output: outputGain, sources, nodes, stopTime };
+            }
+
+            createModalDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 150, decay = 0.6, tone = 1.0, resonance = 8, 
+                        stiffness = 1, strike = 0.002, damping = 0.8, spread = 1.03 } = params;
+                
+                const ratios = [];
+                for (let i = 1; i <= 7; i++) {
+                    ratios.push(i * Math.pow(spread, i - 1) * stiffness);
+                }
+                
+                const masterGain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                const oscillators = [];
+                const nodes = [masterGain, output];
+                
+                let maxStopTime = 0;
+                
+                ratios.forEach((ratio, i) => {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    
+                    oscillators.push(osc);
+                    nodes.push(gain);
+                    
+                    osc.frequency.value = pitch * ratio;
+                    osc.type = 'sine';
+                    
+                    const amplitude = 1 / Math.pow(i + 1, 0.7);
+                    const partialDecay = decay * Math.pow(Math.max(0.1, damping), i * 0.3);
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(amplitude, now + Math.max(0.001, strike));
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + partialDecay);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    
+                    osc.start(now);
+                    const stopTime = now + partialDecay + 0.1;
+                    osc.stop(stopTime);
+                    maxStopTime = Math.max(maxStopTime, stopTime);
+                });
+                
+                if (tone > 0) {
+                    const filter = this.audioContext.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = Math.min(20000, Math.max(100, 4000 * tone));
+                    filter.Q.value = resonance;
+                    
+                    nodes.push(filter);
+                    masterGain.connect(filter);
+                    filter.connect(output);
+                } else {
+                    masterGain.connect(output);
+                }
+                
+                return { output, oscillators, nodes, stopTime: maxStopTime };
+            }
+
+            createPhysicalDrum(params) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 120, decay = 0.8, material = 1, tension = 1, strike = 0.003, 
+                        position = 0.35, resonance = 5, damping = 0.7 } = params;
+                
+                const modes = [
+                    { ratio: 1.00, amplitude: Math.sin(Math.PI * Math.max(0.01, position)) },
+                    { ratio: 2.14 * material, amplitude: Math.sin(2 * Math.PI * Math.max(0.01, position)) * 0.7 },
+                    { ratio: 3.00 * material, amplitude: Math.sin(3 * Math.PI * Math.max(0.01, position)) * 0.5 },
+                    { ratio: 3.89 * material, amplitude: Math.sin(4 * Math.PI * Math.max(0.01, position)) * 0.3 },
+                    { ratio: 5.14 * material, amplitude: Math.sin(5 * Math.PI * Math.max(0.01, position)) * 0.2 }
+                ];
+                
+                const masterGain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                const oscillators = [];
+                const nodes = [masterGain, output];
+                
+                let maxStopTime = 0;
+                
+                modes.forEach((mode, i) => {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    
+                    oscillators.push(osc);
+                    nodes.push(gain);
+                    
+                    const freq = pitch * mode.ratio * Math.max(0.1, tension);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    
+                    const partialDecay = decay * Math.pow(Math.max(0.1, damping), i * 0.4);
+                    const amp = Math.abs(mode.amplitude) * (1 / Math.sqrt(i + 1));
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(amp, now + Math.max(0.001, strike));
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + partialDecay);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+                    
+                    osc.start(now);
+                    const stopTime = now + partialDecay + 0.1;
+                    osc.stop(stopTime);
+                    maxStopTime = Math.max(maxStopTime, stopTime);
+                });
+                
+                const filter = this.audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = Math.min(20000, Math.max(100, 3000 + resonance * 500));
+                filter.Q.value = resonance * 0.8;
+                
+                nodes.push(filter);
+                masterGain.connect(filter);
+                filter.connect(output);
+                
+                return { output, oscillators, nodes, stopTime: maxStopTime };
             }
 
             playDrum(trackId, engine, params, fx, velocity = 1) {
-                if (!this.initialized) this.init();
-                // Simplified for now - just console log
-                console.log('Play drum:', engine);
+                // Stop any existing voice on this track for monophonic behavior
+                if (!trackId || trackId === 'test') {
+                    // For testing/triggering sounds, use polyphonic behavior
+                    trackId = 'test_' + Date.now();
+                } else {
+                    this.stopVoice(trackId);
+                }
+
+                const engineMap = {
+                    '808': () => this.create808Kick(params),
+                    'FM': () => this.createFMDrum(params),
+                    'Snare': () => this.createSnareDrum(params),
+                    'Noise': () => this.createNoiseDrum(params),
+                    'Modal': () => this.createModalDrum(params),
+                    'Physical': () => this.createPhysicalDrum(params)
+                };
+
+                const createEngine = engineMap[engine];
+                if (createEngine) {
+                    const voiceInfo = createEngine();
+                    const fxInfo = this.applyFX(voiceInfo, fx);
+                    
+                    // Apply velocity
+                    const velocityGain = this.audioContext.createGain();
+                    velocityGain.gain.value = velocity;
+                    fxInfo.output.connect(velocityGain);
+                    velocityGain.connect(this.masterGain);
+                    
+                    // Calculate FX tail time
+                    let fxTailTime = 0;
+                    if (fx.delay > 0) {
+                        // Allow for multiple delay repeats: delay time * feedback decay
+                        fxTailTime = Math.max(fxTailTime, (fx.delayTime || 0.25) * 5);
+                    }
+                    if (fx.reverb > 0) {
+                        // Reverb needs time to fully decay
+                        fxTailTime = Math.max(fxTailTime, (fx.reverbSize || 2) * 1.5);
+                    }
+                    if (fx.resonator > 0) {
+                        // Resonator also needs decay time
+                        fxTailTime = Math.max(fxTailTime, (fx.resDecay || 0.3) * 2);
+                    }
+                    
+                    // Collect all nodes for cleanup
+                    const allNodes = [
+                        ...(voiceInfo.nodes || []),
+                        ...(fxInfo.fxNodes || []),
+                        velocityGain
+                    ];
+                    
+                    // Store voice info for monophonic management
+                    this.activeVoices.set(trackId, {
+                        oscillators: voiceInfo.oscillators,
+                        sources: voiceInfo.sources,
+                        nodes: allNodes,
+                        outputGain: velocityGain
+                    });
+                    
+                    // Schedule cleanup with extra time for FX tails
+                    const cleanupTime = voiceInfo.stopTime + fxTailTime;
+                    this.scheduleCleanup(allNodes, cleanupTime);
+                    
+                    // Remove from active voices after it's done
+                    const cleanupDelay = Math.max(0, (cleanupTime - this.audioContext.currentTime) * 1000 + 100);
+                    setTimeout(() => {
+                        this.activeVoices.delete(trackId);
+                    }, cleanupDelay);
+                }
             }
 
             playDrumWithSlide(trackId, engine, startParams, targetParams, startFX, targetFX, velocity, duration) {
-                if (!this.initialized) this.init();
-                this.playDrum(trackId, engine, startParams, startFX, velocity);
+                // Stop any existing voice
+                this.stopVoice(trackId);
+                
+                const now = this.audioContext.currentTime;
+                
+                // Create extended parameters that blend start and target
+                const slideParams = { ...startParams };
+                
+                // Extend decay to cover the slide duration
+                if (slideParams.decay !== undefined) {
+                    slideParams.decay = Math.max(slideParams.decay, duration);
+                }
+                if (slideParams.toneDecay !== undefined) {
+                    slideParams.toneDecay = Math.max(slideParams.toneDecay, duration);
+                }
+                if (slideParams.noiseDecay !== undefined) {
+                    slideParams.noiseDecay = Math.max(slideParams.noiseDecay, duration * 0.9);
+                }
+                
+                // Create the voice
+                const engineMap = {
+                    '808': () => this.create808KickWithAutomation(slideParams, targetParams, duration),
+                    'FM': () => this.createFMDrumWithAutomation(slideParams, targetParams, duration),
+                    'Snare': () => this.createSnareDrumWithAutomation(slideParams, targetParams, duration),
+                    'Noise': () => this.createNoiseDrumWithAutomation(slideParams, targetParams, duration),
+                    'Modal': () => this.createModalDrumWithAutomation(slideParams, targetParams, duration),
+                    'Physical': () => this.createPhysicalDrumWithAutomation(slideParams, targetParams, duration)
+                };
+                
+                const createEngine = engineMap[engine];
+                if (createEngine) {
+                    const voiceInfo = createEngine();
+                    const fxInfo = this.applyFX(voiceInfo, startFX);
+                    
+                    // Apply velocity
+                    const velocityGain = this.audioContext.createGain();
+                    velocityGain.gain.value = velocity;
+                    fxInfo.output.connect(velocityGain);
+                    velocityGain.connect(this.masterGain);
+                    
+                    // Calculate FX tail time
+                    let fxTailTime = 0;
+                    if (startFX.delay > 0) {
+                        fxTailTime = Math.max(fxTailTime, (startFX.delayTime || 0.25) * 5);
+                    }
+                    if (startFX.reverb > 0) {
+                        fxTailTime = Math.max(fxTailTime, (startFX.reverbSize || 2) * 1.5);
+                    }
+                    if (startFX.resonator > 0) {
+                        fxTailTime = Math.max(fxTailTime, (startFX.resDecay || 0.3) * 2);
+                    }
+                    
+                    // Collect all nodes for cleanup
+                    const allNodes = [
+                        ...(voiceInfo.nodes || []),
+                        ...(fxInfo.fxNodes || []),
+                        velocityGain
+                    ];
+                    
+                    // Store voice info
+                    this.activeVoices.set(trackId, {
+                        oscillators: voiceInfo.oscillators,
+                        sources: voiceInfo.sources,
+                        nodes: allNodes,
+                        outputGain: velocityGain
+                    });
+                    
+                    // Schedule cleanup with extra time for FX tails
+                    const cleanupTime = voiceInfo.stopTime + fxTailTime;
+                    this.scheduleCleanup(allNodes, cleanupTime);
+                    
+                    const cleanupDelay = Math.max(0, (cleanupTime - this.audioContext.currentTime) * 1000 + 100);
+                    setTimeout(() => {
+                        this.activeVoices.delete(trackId);
+                    }, cleanupDelay);
+                }
+            }
+
+            // Automation versions that morph pitch over time
+            create808KickWithAutomation(startParams, targetParams, duration) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 1, pitchDecay = 0.05, decay = 0.5, punch = 1, drive = 1, 
+                        sub = 0.3, click = 0, attack = 0.001 } = startParams;
+                
+                const osc = this.audioContext.createOscillator();
+                const subOsc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+                const subGain = this.audioContext.createGain();
+                const merger = this.audioContext.createGain();
+                
+                const oscillators = [osc, subOsc];
+                const nodes = [gain, subGain, merger];
+                
+                const startFreq = 150 * pitch;
+                const endFreq = 40 * pitch;
+                
+                // If target has different pitch, morph toward it
+                const targetPitch = targetParams.pitch !== undefined ? targetParams.pitch : pitch;
+                const targetStartFreq = 150 * targetPitch;
+                const targetEndFreq = 40 * targetPitch;
+                
+                // Set up pitch automation
+                osc.frequency.setValueAtTime(startFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), now + pitchDecay * punch);
+                
+                // After initial envelope, morph toward target pitch
+                if (Math.abs(targetPitch - pitch) > 0.01) {
+                    osc.frequency.setValueAtTime(Math.max(30, endFreq), now + pitchDecay * punch);
+                    osc.frequency.exponentialRampToValueAtTime(Math.max(30, targetEndFreq), now + duration);
+                }
+                
+                subOsc.frequency.setValueAtTime(startFreq * 0.5, now);
+                subOsc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq * 0.5), now + pitchDecay * punch);
+                
+                if (Math.abs(targetPitch - pitch) > 0.01) {
+                    subOsc.frequency.setValueAtTime(Math.max(20, endFreq * 0.5), now + pitchDecay * punch);
+                    subOsc.frequency.exponentialRampToValueAtTime(Math.max(20, targetEndFreq * 0.5), now + duration);
+                }
+                
+                if (click > 0) {
+                    const clickOsc = this.audioContext.createOscillator();
+                    const clickGain = this.audioContext.createGain();
+                    clickOsc.type = 'square';
+                    clickOsc.frequency.value = startFreq * 8;
+                    clickGain.gain.setValueAtTime(click, now);
+                    clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.01);
+                    clickOsc.connect(clickGain);
+                    clickGain.connect(merger);
+                    clickOsc.start(now);
+                    clickOsc.stop(now + 0.02);
+                    oscillators.push(clickOsc);
+                    nodes.push(clickGain);
+                }
+                
+                const driveNode = this.audioContext.createWaveShaper();
+                const curve = new Float32Array(256);
+                for (let i = 0; i < 256; i++) {
+                    const x = (i - 128) / 128;
+                    curve[i] = Math.tanh(x * drive) * 0.8;
+                }
+                driveNode.curve = curve;
+                nodes.push(driveNode);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(1, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                subGain.gain.setValueAtTime(0, now);
+                subGain.gain.linearRampToValueAtTime(sub, now + attack);
+                subGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                osc.connect(driveNode);
+                driveNode.connect(gain);
+                subOsc.connect(subGain);
+                gain.connect(merger);
+                subGain.connect(merger);
+                
+                osc.start(now);
+                subOsc.start(now);
+                const stopTime = now + decay + 0.1;
+                osc.stop(stopTime);
+                subOsc.stop(stopTime);
+                
+                return { output: merger, oscillators, nodes, stopTime };
+            }
+
+            createFMDrumWithAutomation(startParams, targetParams, duration) {
+                const now = this.audioContext.currentTime;
+                const { pitch = 200, fmRatio = 1.6, fmAmount = 180, fmDecay = 0.15, decay = 0.15, 
+                        tone = 0.8, filterQ = 1, attack = 0.001 } = startParams;
+                
+                const carrier = this.audioContext.createOscillator();
+                const modulator = this.audioContext.createOscillator();
+                const modGain = this.audioContext.createGain();
+                const gain = this.audioContext.createGain();
+                const output = this.audioContext.createGain();
+                
+                const oscillators = [carrier, modulator];
+                const nodes = [modGain, gain, output];
+                
+                // Get target pitch
+                const targetPitch = targetParams.pitch !== undefined ? targetParams.pitch : pitch;
+                const targetFmRatio = targetParams.fmRatio !== undefined ? targetParams.fmRatio : fmRatio;
+                
+                // Set up pitch automation
+                carrier.frequency.setValueAtTime(pitch, now);
+                if (Math.abs(targetPitch - pitch) > 1) {
+                    carrier.frequency.exponentialRampToValueAtTime(targetPitch, now + duration);
+                }
+                
+                modulator.frequency.setValueAtTime(pitch * fmRatio, now);
+                if (Math.abs(targetPitch - pitch) > 1 || Math.abs(targetFmRatio - fmRatio) > 0.01) {
+                    modulator.frequency.exponentialRampToValueAtTime(targetPitch * targetFmRatio, now + duration);
+                }
+                
+                modGain.gain.setValueAtTime(fmAmount, now);
+                if (fmAmount > 0) {
+                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, fmAmount * 0.1), now + fmDecay);
+                }
+                
+                if (tone > 0) {
+                    const filter = this.audioContext.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = Math.min(20000, 8000 * tone);
+                    filter.Q.value = filterQ;
+                    carrier.connect(filter);
+                    filter.connect(gain);
+                    nodes.push(filter);
+                } else {
+                    carrier.connect(gain);
+                }
+                
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                gain.connect(output);
+                
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.8, now + attack);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                
+                carrier.start(now);
+                modulator.start(now);
+                const stopTime = now + Math.max(decay, fmDecay) + 0.1;
+                carrier.stop(stopTime);
+                modulator.stop(stopTime);
+                
+                return { output, oscillators, nodes, stopTime };
+            }
+
+            // For noise-based engines, we can't morph pitch, so just extend decay
+            createSnareDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createSnareDrum(startParams);
+            }
+
+            createNoiseDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createNoiseDrum(startParams);
+            }
+
+            createModalDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createModalDrum(startParams);
+            }
+
+            createPhysicalDrumWithAutomation(startParams, targetParams, duration) {
+                return this.createPhysicalDrum(startParams);
             }
         }
 
@@ -1294,25 +2019,6 @@
             conditionModalStep: null,
             conditionModalTrack: null,
             globalMorphAmount: 0,
-            
-            masterFX: {},
-            
-            patternSequencerEnabled: false,
-            patternSequencerMode: 'forward',
-            currentPattern: 0,
-            selectedPattern: null,
-            nextPatternQueued: null,
-            patternDirection: 1,
-            patternStepCount: 0,
-            copiedPattern: null,
-            patterns: Array(16).fill(null).map((_, i) => ({
-                id: i,
-                data: null,
-                steps: 16,
-                probability: 100,
-                loop: false
-            })),
-            
             tracks: {
                 kick: {
                     name: 'KICK',
@@ -1410,28 +2116,28 @@
         let audioEngine = null;
         let sequencerInterval = null;
         let dragState = null;
-        let knobDragState = null;
-        let customStepTarget = null;
 
         function lerp(a, b, t) {
             return a + (b - a) * t;
         }
 
         function initializeTrackDefaults(trackId) {
-            console.log('Initializing track:', trackId);
             const track = state.tracks[trackId];
             const engineSpec = ENGINE_SPECS[track.engine];
             
+            // Initialize params with defaults
             track.params = {};
             Object.entries(engineSpec.params).forEach(([key, spec]) => {
                 track.params[key] = spec.default;
             });
             
+            // Initialize FX with defaults
             track.fx = {};
             Object.entries(FX_SPECS).forEach(([key, spec]) => {
                 track.fx[key] = spec.default;
             });
             
+            // Set normal state
             setNormalState(trackId);
         }
 
@@ -1448,6 +2154,7 @@
             const trackId = state.selectedTrack;
             setNormalState(trackId);
             
+            // Visual feedback
             const btn = document.getElementById('set-normal-btn');
             const originalText = btn.textContent;
             btn.textContent = 'SAVED!';
@@ -1457,6 +2164,7 @@
                 btn.classList.remove('active');
             }, 500);
             
+            // Update sidebar to show the indicator
             renderSidebar();
         }
 
@@ -1464,18 +2172,22 @@
             const track = state.tracks[state.selectedTrack];
             
             if (!track.normalState) {
+                // If no normal state saved, initialize with defaults
                 initializeTrackDefaults(state.selectedTrack);
             }
             
+            // Load the normal state into current editing parameters
             track.engine = track.normalState.engine;
             track.params = { ...track.normalState.params };
             track.fx = { ...track.normalState.fx };
             
+            // Reset global morph
             state.globalMorphAmount = 0;
             track.targetParams = null;
             document.getElementById('global-morph-slider').value = 0;
             document.getElementById('global-morph-value').textContent = '0%';
             
+            // Visual feedback
             const btn = document.getElementById('recall-normal-btn');
             const originalText = btn.textContent;
             btn.textContent = 'RECALLED!';
@@ -1483,8 +2195,9 @@
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.classList.remove('active');
-            }, 300);
+            }, 500);
             
+            // Re-render to show the recalled parameters
             renderSidebar();
         }
 
@@ -1543,455 +2256,37 @@
             if (condition === '1:1') return true;
             
             const [bar, total] = condition.split(':').map(Number);
+            
+            // Calculate which bar we're on within the pattern length
             const barInPattern = currentBar % total;
+            
+            // Trigger if we're on the specified bar (converting from 1-indexed to 0-indexed)
             return barInPattern === (bar - 1);
         }
 
-        // Tempo Knob Functions
-        function setupTempoKnob() {
-            console.log('Setting up tempo knob...');
-            const knob = document.getElementById('tempo-knob');
+        function init() {
+            audioEngine = new DrumSynthEngine();
             
-            knob.addEventListener('mousedown', startKnobDrag);
-            document.addEventListener('mousemove', handleKnobDrag);
-            document.addEventListener('mouseup', stopKnobDrag);
-            
-            updateKnobRotation();
-        }
-
-        function startKnobDrag(e) {
-            e.preventDefault();
-            const rect = e.target.getBoundingClientRect();
-            knobDragState = {
-                startY: e.clientY,
-                startTempo: state.tempo
-            };
-        }
-
-        function handleKnobDrag(e) {
-            if (!knobDragState) return;
-            
-            const deltaY = knobDragState.startY - e.clientY;
-            const sensitivity = 0.5;
-            
-            let newTempo = knobDragState.startTempo + (deltaY * sensitivity);
-            newTempo = Math.max(40, Math.min(300, Math.round(newTempo)));
-            
-            if (newTempo !== state.tempo) {
-                state.tempo = newTempo;
-                updateKnobRotation();
-                
-                if (state.isPlaying) {
-                    stopSequencer();
-                    startSequencer();
-                }
-            }
-        }
-
-        function stopKnobDrag() {
-            knobDragState = null;
-        }
-
-        function updateKnobRotation() {
-            const knob = document.getElementById('tempo-knob');
-            const value = document.getElementById('tempo-value');
-            
-            const minTempo = 40;
-            const maxTempo = 300;
-            const minAngle = -135;
-            const maxAngle = 135;
-            
-            const percentage = (state.tempo - minTempo) / (maxTempo - minTempo);
-            const angle = minAngle + (percentage * (maxAngle - minAngle));
-            
-            knob.style.transform = `rotate(${angle}deg)`;
-            value.textContent = state.tempo;
-        }
-
-        // Pattern Sequencer Functions
-        function renderPatternSequencer() {
-            console.log('Rendering pattern sequencer...');
-            const grid = document.getElementById('pattern-grid');
-            
-            if (grid.children.length === 0) {
-                state.patterns.forEach((pattern, i) => {
-                    const cell = createPatternCell(pattern, i);
-                    grid.appendChild(cell);
-                });
-            } else {
-                state.patterns.forEach((pattern, i) => {
-                    const cell = grid.children[i];
-                    updatePatternCell(cell, pattern, i);
-                });
-            }
-            console.log('Pattern sequencer rendered');
-        }
-
-        function createPatternCell(pattern, index) {
-            const cell = document.createElement('div');
-            cell.className = 'pattern-cell';
-            cell.dataset.patternIndex = index;
-            
-            cell.onclick = (e) => {
-                if (e.target.tagName === 'BUTTON' || 
-                    e.target.tagName === 'SELECT' || 
-                    e.target.tagName === 'INPUT' ||
-                    e.target.classList.contains('pattern-mini-btn') ||
-                    e.target.classList.contains('pattern-loop-btn')) {
-                    return;
-                }
-                selectPattern(index);
-            };
-            
-            const header = document.createElement('div');
-            header.className = 'pattern-cell-header';
-            
-            const number = document.createElement('div');
-            number.className = 'pattern-number';
-            number.textContent = `P${index + 1}`;
-            
-            const headerRight = document.createElement('div');
-            headerRight.className = 'pattern-header-right';
-            
-            const indicator = document.createElement('div');
-            indicator.className = 'pattern-indicator';
-            
-            const loopBtn = document.createElement('div');
-            loopBtn.className = 'pattern-loop-btn';
-            loopBtn.textContent = '⟳';
-            loopBtn.onclick = (e) => {
-                e.stopPropagation();
-                togglePatternLoop(index);
-            };
-            
-            headerRight.appendChild(indicator);
-            headerRight.appendChild(loopBtn);
-            
-            header.appendChild(number);
-            header.appendChild(headerRight);
-            
-            const buttonsRow1 = document.createElement('div');
-            buttonsRow1.className = 'pattern-buttons-row';
-            
-            const writeBtn = document.createElement('button');
-            writeBtn.className = 'pattern-mini-btn';
-            writeBtn.textContent = 'WRITE';
-            writeBtn.onclick = () => writePattern(index);
-            
-            const clearBtn = document.createElement('button');
-            clearBtn.className = 'pattern-mini-btn';
-            clearBtn.textContent = 'CLEAR';
-            clearBtn.onclick = () => clearPatternData(index);
-            
-            buttonsRow1.appendChild(writeBtn);
-            buttonsRow1.appendChild(clearBtn);
-            
-            const buttonsRow2 = document.createElement('div');
-            buttonsRow2.className = 'pattern-buttons-row';
-            
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'pattern-mini-btn';
-            copyBtn.textContent = 'COPY';
-            copyBtn.onclick = () => copyPattern(index);
-            
-            const pasteBtn = document.createElement('button');
-            pasteBtn.className = 'pattern-mini-btn';
-            pasteBtn.textContent = 'PASTE';
-            pasteBtn.onclick = () => pastePattern(index);
-            
-            buttonsRow2.appendChild(copyBtn);
-            buttonsRow2.appendChild(pasteBtn);
-            
-            const stepsRow = document.createElement('div');
-            stepsRow.className = 'pattern-select-row';
-            
-            const stepsLabel = document.createElement('div');
-            stepsLabel.className = 'pattern-select-label';
-            stepsLabel.textContent = 'STEPS';
-            
-            const stepsSelect = document.createElement('select');
-            stepsSelect.className = 'pattern-dropdown';
-            [4, 8, 16, 32, 64, 128, 256, 'Custom'].forEach(val => {
-                const option = document.createElement('option');
-                option.value = val;
-                option.textContent = val;
-                if (val === pattern.steps) option.selected = true;
-                stepsSelect.appendChild(option);
-            });
-            stepsSelect.onchange = (e) => {
-                if (e.target.value === 'Custom') {
-                    openCustomStepsModal(index);
-                } else {
-                    pattern.steps = parseInt(e.target.value);
-                    renderPatternSequencer();
-                }
-            };
-            
-            stepsRow.appendChild(stepsLabel);
-            stepsRow.appendChild(stepsSelect);
-            
-            const probRow = document.createElement('div');
-            probRow.className = 'pattern-slider-row';
-            
-            const probLabel = document.createElement('div');
-            probLabel.className = 'pattern-select-label';
-            probLabel.textContent = 'PROB';
-            
-            const probSlider = document.createElement('input');
-            probSlider.type = 'range';
-            probSlider.className = 'pattern-mini-slider';
-            probSlider.min = 0;
-            probSlider.max = 100;
-            probSlider.value = pattern.probability;
-            probSlider.oninput = (e) => {
-                pattern.probability = parseInt(e.target.value);
-                cell.querySelector('.pattern-value-display').textContent = pattern.probability + '%';
-            };
-            
-            const probValue = document.createElement('div');
-            probValue.className = 'pattern-value-display';
-            probValue.textContent = pattern.probability + '%';
-            
-            probRow.appendChild(probLabel);
-            probRow.appendChild(probSlider);
-            probRow.appendChild(probValue);
-            
-            cell.appendChild(header);
-            cell.appendChild(buttonsRow1);
-            cell.appendChild(buttonsRow2);
-            cell.appendChild(stepsRow);
-            cell.appendChild(probRow);
-            
-            updatePatternCell(cell, pattern, index);
-            
-            return cell;
-        }
-
-        function updatePatternCell(cell, pattern, index) {
-            cell.classList.toggle('has-data', pattern.data !== null);
-            cell.classList.toggle('active', state.patternSequencerEnabled && state.currentPattern === index);
-            cell.classList.toggle('selected', state.selectedPattern === index);
-            
-            const loopBtn = cell.querySelector('.pattern-loop-btn');
-            if (loopBtn) {
-                loopBtn.classList.toggle('active', pattern.loop);
-            }
-        }
-
-        function writePattern(index) {
-            const pattern = state.patterns[index];
-            
-            pattern.data = {};
-            Object.entries(state.tracks).forEach(([trackId, track]) => {
-                pattern.data[trackId] = {
-                    steps: [...track.steps],
-                    velocities: [...track.velocities],
-                    stepConditions: [...track.stepConditions],
-                    stepLocks: track.stepLocks.map(lock => lock ? { ...lock } : null),
-                    stepSlides: [...track.stepSlides]
-                };
-            });
-            
-            renderPatternSequencer();
-        }
-
-        function clearPatternData(index) {
-            state.patterns[index].data = null;
-            renderPatternSequencer();
-        }
-
-        function copyPattern(index) {
-            const pattern = state.patterns[index];
-            if (!pattern.data) return;
-            
-            state.copiedPattern = {
-                data: JSON.parse(JSON.stringify(pattern.data)),
-                steps: pattern.steps,
-                probability: pattern.probability,
-                loop: pattern.loop
-            };
-            
-            const grid = document.getElementById('pattern-grid');
-            const cell = grid.children[index];
-            const buttonRows = cell.querySelectorAll('.pattern-buttons-row');
-            if (buttonRows.length > 1) {
-                const copyBtn = buttonRows[1].querySelector('.pattern-mini-btn:first-child');
-                if (copyBtn) {
-                    copyBtn.classList.add('copy-active');
-                    setTimeout(() => {
-                        copyBtn.classList.remove('copy-active');
-                    }, 200);
-                }
-            }
-        }
-
-        function pastePattern(index) {
-            if (!state.copiedPattern) return;
-            
-            const pattern = state.patterns[index];
-            
-            pattern.data = JSON.parse(JSON.stringify(state.copiedPattern.data));
-            pattern.steps = state.copiedPattern.steps;
-            pattern.probability = state.copiedPattern.probability;
-            pattern.loop = state.copiedPattern.loop;
-            
-            const grid = document.getElementById('pattern-grid');
-            const cell = grid.children[index];
-            const buttonRows = cell.querySelectorAll('.pattern-buttons-row');
-            if (buttonRows.length > 1) {
-                const pasteBtn = buttonRows[1].querySelector('.pattern-mini-btn:last-child');
-                if (pasteBtn) {
-                    pasteBtn.classList.add('copy-active');
-                    setTimeout(() => {
-                        pasteBtn.classList.remove('copy-active');
-                    }, 200);
-                }
-            }
-            
-            renderPatternSequencer();
-        }
-
-        function togglePatternLoop(index) {
-            state.patterns[index].loop = !state.patterns[index].loop;
-            renderPatternSequencer();
-        }
-
-        function selectPattern(index) {
-            const pattern = state.patterns[index];
-            
-            if (state.patternSequencerMode === 'instant') {
-                if (pattern.data) {
-                    state.selectedPattern = index;
-                    
-                    const currentPatternLength = state.patterns[state.currentPattern].steps;
-                    const newPatternLength = pattern.steps;
-                    let equivalentStep;
-                    
-                    if (state.currentStep >= 0) {
-                        const progressRatio = (state.patternStepCount % currentPatternLength) / currentPatternLength;
-                        equivalentStep = Math.floor(progressRatio * newPatternLength);
-                    } else {
-                        equivalentStep = 0;
-                    }
-                    
-                    state.currentPattern = index;
-                    state.patternStepCount = equivalentStep;
-                    loadPattern(index);
-                    
-                    if (!state.isPlaying) {
-                        togglePlay();
-                    }
-                }
-            } else if (state.patternSequencerMode === 'next') {
-                if (pattern.data) {
-                    state.selectedPattern = index;
-                    state.nextPatternQueued = index;
-                    
-                    if (!state.isPlaying) {
-                        state.currentPattern = index;
-                        loadPattern(index);
-                        state.patternStepCount = 0;
-                        togglePlay();
-                    }
-                }
-            } else {
-                state.selectedPattern = index;
-                if (pattern.data) {
-                    loadPattern(index);
-                }
-            }
-            
-            renderPatternSequencer();
-        }
-
-        function loadPattern(index) {
-            const pattern = state.patterns[index];
-            
-            if (!pattern.data) return;
-            
-            Object.entries(pattern.data).forEach(([trackId, data]) => {
-                const track = state.tracks[trackId];
-                if (track) {
-                    track.steps = [...data.steps];
-                    track.velocities = [...data.velocities];
-                    track.stepConditions = [...data.stepConditions];
-                    track.stepLocks = data.stepLocks.map(lock => lock ? { ...lock } : null);
-                    track.stepSlides = [...data.stepSlides];
-                }
+            // Initialize all tracks with defaults
+            Object.keys(state.tracks).forEach(trackId => {
+                initializeTrackDefaults(trackId);
             });
             
             renderTracks();
-        }
-
-        function openCustomStepsModal(patternIndex) {
-            customStepTarget = patternIndex;
-            document.getElementById('custom-steps-input').value = '';
-            document.getElementById('custom-steps-modal').classList.add('active');
-            document.getElementById('custom-steps-input').focus();
-        }
-
-        function closeCustomStepsModal() {
-            document.getElementById('custom-steps-modal').classList.remove('active');
-            customStepTarget = null;
-        }
-
-        function setCustomSteps() {
-            const input = document.getElementById('custom-steps-input');
-            const value = parseInt(input.value);
-            
-            if (value && value > 0 && value < 10000 && customStepTarget !== null) {
-                state.patterns[customStepTarget].steps = value;
-                renderPatternSequencer();
-            }
-            
-            closeCustomStepsModal();
-        }
-
-        function init() {
-            console.log('Initializing application...');
-            try {
-                audioEngine = new DrumSynthEngine();
-                console.log('Audio engine created');
-                
-                Object.keys(state.tracks).forEach(trackId => {
-                    initializeTrackDefaults(trackId);
-                });
-                console.log('Track defaults initialized');
-                
-                Object.entries(FX_SPECS).forEach(([key, spec]) => {
-                    state.masterFX[key] = spec.default;
-                });
-                console.log('Master FX initialized');
-                
-                setupTempoKnob();
-                renderTracks();
-                renderSidebar();
-                renderPatternSequencer();
-                renderMasterFX();
-                setupEventListeners();
-                
-                console.log('Initialization complete!');
-            } catch (e) {
-                console.error('Error during initialization:', e);
-                alert('Error initializing app. Check console for details.');
-            }
+            renderSidebar();
+            setupEventListeners();
         }
 
         function renderTracks() {
-            console.log('Rendering tracks...');
             const panel = document.getElementById('tracks-panel');
-            console.log('Tracks panel element:', panel);
             const wasEmpty = panel.children.length === 0;
-            console.log('Panel was empty:', wasEmpty);
             
             if (wasEmpty) {
                 panel.innerHTML = '';
                 Object.entries(state.tracks).forEach(([trackId, track]) => {
                     const trackEl = createTrackElement(trackId, track);
-                    console.log('Created track element for:', trackId, trackEl);
                     panel.appendChild(trackEl);
                 });
-                console.log('Panel now has', panel.children.length, 'tracks');
             } else {
                 Object.entries(state.tracks).forEach(([trackId, track]) => {
                     const trackEl = document.querySelector(`[data-track-id="${trackId}"]`);
@@ -2013,6 +2308,7 @@
                             stepEl.classList.toggle('playing', i === state.currentStep);
                             stepEl.classList.toggle('has-locks', hasLocks);
                             
+                            // Update velocity bar
                             const velocityBar = stepEl.querySelector('.velocity-bar');
                             const velocityValue = stepEl.querySelector('.velocity-value');
                             if (velocityBar && velocityValue) {
@@ -2021,6 +2317,7 @@
                                 velocityValue.textContent = Math.round(velocity * 100);
                             }
                             
+                            // Update P and S buttons
                             const pBtn = container.querySelector('.p-lock-btn');
                             const sBtn = container.querySelector('.s-lock-btn');
                             
@@ -2040,7 +2337,6 @@
                     }
                 });
             }
-            console.log('Tracks rendered');
         }
 
         function createTrackElement(trackId, track) {
@@ -2100,6 +2396,7 @@
                 const container = document.createElement('div');
                 container.className = 'step-container';
                 
+                // Lock buttons (P and S)
                 const lockButtons = document.createElement('div');
                 lockButtons.className = 'lock-buttons';
                 
@@ -2126,6 +2423,7 @@
                 const hasLocks = track.stepLocks[i] !== null;
                 step.className = `step ${track.steps[i] ? 'active' : ''} ${i % 4 === 0 ? 'beat-4' : ''} ${hasLocks ? 'has-locks' : ''}`;
                 
+                // Add velocity bar and value display
                 const velocityBar = document.createElement('div');
                 velocityBar.className = 'velocity-bar';
                 velocityBar.style.height = (track.velocities[i] * 100) + '%';
@@ -2137,6 +2435,7 @@
                 step.appendChild(velocityBar);
                 step.appendChild(velocityValue);
                 
+                // Mouse events for velocity dragging
                 step.onmousedown = (e) => handleStepMouseDown(e, trackId, i);
                 
                 const condition = document.createElement('div');
@@ -2163,6 +2462,8 @@
             e.preventDefault();
             e.stopPropagation();
             
+            const step = e.currentTarget;
+            const rect = step.getBoundingClientRect();
             const startY = e.clientY;
             const startVelocity = state.tracks[trackId].velocities[stepIndex];
             
@@ -2214,20 +2515,19 @@
         }
 
         function renderSidebar() {
-            console.log('Rendering sidebar...');
             const selectedTrack = state.tracks[state.selectedTrack];
             const hasNormalState = selectedTrack.normalState !== null;
             const indicator = hasNormalState ? ' ●' : '';
             const title = `${selectedTrack.name} — ${ENGINE_SPECS[selectedTrack.engine].name}${indicator}`;
             document.getElementById('synth-title').textContent = title;
             
+            // Update track morph slider
             document.getElementById('track-morph-slider').value = selectedTrack.morphAmount;
             document.getElementById('track-morph-value').textContent = selectedTrack.morphAmount.toFixed(0) + '%';
             
             renderEngineSelect();
             renderParams();
             renderFX();
-            console.log('Sidebar rendered');
         }
 
         function renderEngineSelect() {
@@ -2249,6 +2549,7 @@
             const selectedTrack = state.tracks[state.selectedTrack];
             const engineSpec = ENGINE_SPECS[selectedTrack.engine];
             
+            // Get morphed state if there's a target
             const morphedState = getMorphedState(selectedTrack);
             const displayParams = morphedState.params;
             
@@ -2299,6 +2600,7 @@
             
             const selectedTrack = state.tracks[state.selectedTrack];
             
+            // Get morphed state if there's a target
             const morphedState = getMorphedState(selectedTrack);
             const displayFX = morphedState.fx;
 
@@ -2340,61 +2642,18 @@
             });
         }
 
-        function renderMasterFX() {
-            console.log('Rendering master FX...');
-            const container = document.getElementById('master-fx-container');
-            container.innerHTML = '';
-
-            Object.entries(FX_SPECS).forEach(([key, spec]) => {
-                const paramDiv = document.createElement('div');
-                paramDiv.className = 'param';
-                
-                const label = document.createElement('div');
-                label.className = 'param-label';
-                label.textContent = spec.label;
-                
-                const valueDiv = document.createElement('div');
-                valueDiv.className = 'param-value';
-                
-                const slider = document.createElement('input');
-                slider.type = 'range';
-                slider.className = 'slider';
-                slider.min = spec.min;
-                slider.max = spec.max;
-                slider.step = spec.step;
-                slider.value = state.masterFX[key] !== undefined ? state.masterFX[key] : spec.default;
-                
-                const display = document.createElement('div');
-                display.className = 'value-display';
-                const decimals = spec.step < 0.1 ? 2 : spec.step < 1 ? 1 : 0;
-                display.textContent = parseFloat(slider.value).toFixed(decimals);
-                
-                slider.oninput = (e) => {
-                    const value = parseFloat(e.target.value);
-                    display.textContent = value.toFixed(decimals);
-                    updateMasterFX(key, value);
-                };
-                
-                valueDiv.appendChild(slider);
-                valueDiv.appendChild(display);
-                paramDiv.appendChild(label);
-                paramDiv.appendChild(valueDiv);
-                container.appendChild(paramDiv);
-            });
-            console.log('Master FX rendered');
-        }
-
-        function updateMasterFX(key, value) {
-            state.masterFX[key] = value;
-            if (audioEngine && audioEngine.initialized) {
-                audioEngine.updateMasterFX(state.masterFX);
-            }
-        }
-
         function setupEventListeners() {
-            console.log('Setting up event listeners...');
             document.getElementById('play-btn').onclick = togglePlay;
             document.getElementById('reset-btn').onclick = reset;
+            document.getElementById('tempo-input').oninput = (e) => {
+                const val = parseInt(e.target.value) || 120;
+                state.tempo = Math.max(40, Math.min(300, val));
+                e.target.value = state.tempo;
+                if (state.isPlaying) {
+                    stopSequencer();
+                    startSequencer();
+                }
+            };
             
             document.getElementById('randomize-pattern-btn').onclick = () => randomizePattern(state.selectedTrack);
             document.getElementById('test-sound-btn').onclick = testSound;
@@ -2403,14 +2662,7 @@
             document.getElementById('recall-normal-btn').onclick = recallNormalState;
             document.getElementById('trigger-btn').onclick = triggerSound;
             
-            document.getElementById('pattern-seq-toggle').onclick = togglePatternSequencer;
-            document.getElementById('pattern-mode').onchange = (e) => {
-                state.patternSequencerMode = e.target.value;
-                state.selectedPattern = null;
-                state.nextPatternQueued = null;
-                renderPatternSequencer();
-            };
-            
+            // Track morph
             document.getElementById('track-generate-btn').onclick = generateTrackTarget;
             document.getElementById('track-lock-btn').onclick = lockTrackTarget;
             document.getElementById('track-morph-slider').oninput = (e) => {
@@ -2421,6 +2673,7 @@
                 renderFX();
             };
             
+            // Global morph
             document.getElementById('global-generate-btn').onclick = generateGlobalTarget;
             document.getElementById('global-lock-btn').onclick = lockGlobalTarget;
             document.getElementById('global-morph-slider').oninput = (e) => {
@@ -2430,32 +2683,20 @@
                 renderFX();
             };
             
+            // Mobile close button
+            document.getElementById('close-panel-btn').onclick = () => {
+                document.getElementById('side-panel').classList.remove('visible');
+            };
+            
+            // Modal
             document.getElementById('condition-modal').onclick = (e) => {
                 if (e.target.id === 'condition-modal') {
                     closeConditionModal();
                 }
             };
-            
-            document.getElementById('custom-steps-modal').onclick = (e) => {
-                if (e.target.id === 'custom-steps-modal') {
-                    closeCustomStepsModal();
-                }
-            };
-            
-            document.getElementById('custom-steps-ok').onclick = setCustomSteps;
-            document.getElementById('custom-steps-cancel').onclick = closeCustomStepsModal;
-            document.getElementById('custom-steps-input').onkeypress = (e) => {
-                if (e.key === 'Enter') setCustomSteps();
-            };
-            console.log('Event listeners set up');
         }
 
         function togglePlay() {
-            // Initialize audio engine on first interaction
-            if (audioEngine && !audioEngine.initialized) {
-                audioEngine.init();
-            }
-            
             state.isPlaying = !state.isPlaying;
             const btn = document.getElementById('play-btn');
             
@@ -2467,12 +2708,6 @@
                 btn.classList.remove('active');
                 btn.textContent = 'PLAY';
                 stopSequencer();
-                state.currentStep = -1;
-                state.currentBar = 0;
-                state.stepInBar = 0;
-                state.patternStepCount = 0;
-                updateBarIndicator();
-                renderTracks();
             }
         }
 
@@ -2495,6 +2730,7 @@
                     if (track.steps[state.currentStep] && !track.mute && shouldTrigger(condition, state.currentBar)) {
                         const velocity = track.velocities[state.currentStep];
                         
+                        // Determine the sound to play at this step
                         let baseEngine, baseParams, baseFX;
                         const currentLock = track.stepLocks[state.currentStep];
                         
@@ -2512,7 +2748,63 @@
                             baseFX = track.fx;
                         }
                         
-                        audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
+                        // Check if slide is enabled
+                        const slideEnabled = track.stepSlides[state.currentStep];
+                        
+                        if (slideEnabled) {
+                            // Find the next active step
+                            let nextActiveStep = null;
+                            let stepsToNext = 0;
+                            for (let i = 1; i <= 16; i++) {
+                                const nextIdx = (state.currentStep + i) % 16;
+                                if (track.steps[nextIdx]) {
+                                    nextActiveStep = nextIdx;
+                                    stepsToNext = i;
+                                    break;
+                                }
+                            }
+                            
+                            if (nextActiveStep !== null) {
+                                // Calculate slide duration
+                                const slideDurationSeconds = (stepsToNext * stepDuration) / 1000;
+                                
+                                // Get target sound
+                                let targetEngine, targetParams, targetFX;
+                                const nextLock = track.stepLocks[nextActiveStep];
+                                
+                                if (nextLock) {
+                                    targetEngine = nextLock.engine;
+                                    targetParams = nextLock.params;
+                                    targetFX = nextLock.fx;
+                                } else if (track.normalState) {
+                                    targetEngine = track.normalState.engine;
+                                    targetParams = track.normalState.params;
+                                    targetFX = track.normalState.fx;
+                                } else {
+                                    targetEngine = track.engine;
+                                    targetParams = track.params;
+                                    targetFX = track.fx;
+                                }
+                                
+                                // Play with slide - pass both start and target params
+                                audioEngine.playDrumWithSlide(
+                                    trackId, 
+                                    baseEngine, 
+                                    baseParams, 
+                                    targetParams,
+                                    baseFX, 
+                                    targetFX,
+                                    velocity,
+                                    slideDurationSeconds
+                                );
+                            } else {
+                                // No next step, just play normally
+                                audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
+                            }
+                        } else {
+                            // No slide - play normally (this will cut off any previous sound)
+                            audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
+                        }
                     }
                 });
                 
@@ -2531,10 +2823,9 @@
                 sequencerInterval = null;
             }
             
+            // Stop all active voices
             Object.keys(state.tracks).forEach(trackId => {
-                if (audioEngine && audioEngine.initialized) {
-                    audioEngine.stopVoice(trackId);
-                }
+                audioEngine.stopVoice(trackId);
             });
             
             document.querySelectorAll('.step').forEach(step => {
@@ -2547,28 +2838,22 @@
         }
 
         function reset() {
-            const wasPlaying = state.isPlaying;
-            
-            if (wasPlaying) {
-                stopSequencer();
-            }
-            
             state.currentStep = -1;
             state.currentBar = 0;
             state.stepInBar = 0;
-            state.patternStepCount = 0;
             updateBarIndicator();
             renderTracks();
-            
-            if (wasPlaying) {
-                startSequencer();
-            }
         }
 
         function selectTrack(trackId) {
             state.selectedTrack = trackId;
             renderTracks();
             renderSidebar();
+            
+            // On mobile, show params panel
+            if (window.innerWidth <= 768) {
+                document.getElementById('side-panel').classList.add('visible');
+            }
         }
 
         function toggleStep(trackId, stepIndex) {
@@ -2580,8 +2865,10 @@
             const track = state.tracks[trackId];
             
             if (track.stepLocks[stepIndex]) {
+                // Remove lock
                 track.stepLocks[stepIndex] = null;
             } else {
+                // Store current state as lock
                 track.stepLocks[stepIndex] = {
                     engine: track.engine,
                     params: { ...track.params },
@@ -2594,7 +2881,10 @@
 
         function toggleSLock(trackId, stepIndex) {
             const track = state.tracks[trackId];
+            
+            // Simply toggle the slide flag - works independent of P-lock
             track.stepSlides[stepIndex] = !track.stepSlides[stepIndex];
+            
             renderTracks();
         }
 
@@ -2606,7 +2896,10 @@
         function randomizePattern(trackId) {
             const density = 0.25 + Math.random() * 0.3;
             state.tracks[trackId].steps = Array(16).fill(false).map(() => Math.random() < density);
+            
+            // Randomize velocities too
             state.tracks[trackId].velocities = Array(16).fill(0).map(() => 0.4 + Math.random() * 0.6);
+            
             renderTracks();
         }
 
@@ -2626,14 +2919,17 @@
             });
             track.params = newParams;
             
+            // Reset FX to defaults
             const newFX = {};
             Object.entries(FX_SPECS).forEach(([key, spec]) => {
                 newFX[key] = spec.default;
             });
             track.fx = newFX;
             
+            // Update normal state with new engine defaults
             setNormalState(state.selectedTrack);
             
+            // Visual feedback that normal state was set
             const btn = document.getElementById('set-normal-btn');
             if (btn) {
                 const originalText = btn.textContent;
@@ -2653,6 +2949,7 @@
             const track = state.tracks[state.selectedTrack];
             track.params[key] = value;
             
+            // Reset morph when manually editing
             if (track.morphAmount > 0) {
                 track.morphAmount = 0;
                 track.targetParams = null;
@@ -2665,6 +2962,7 @@
             const track = state.tracks[state.selectedTrack];
             track.fx[key] = value;
             
+            // Reset morph when manually editing
             if (track.morphAmount > 0) {
                 track.morphAmount = 0;
                 track.targetParams = null;
@@ -2717,6 +3015,7 @@
                 fx: generateRandomFX()
             };
             
+            // Visual feedback
             const btn = document.getElementById('track-generate-btn');
             const originalText = btn.textContent;
             btn.textContent = 'GENERATED!';
@@ -2738,6 +3037,7 @@
             document.getElementById('track-morph-slider').value = 0;
             document.getElementById('track-morph-value').textContent = '0%';
             
+            // Visual feedback
             const btn = document.getElementById('track-lock-btn');
             const originalText = btn.textContent;
             btn.textContent = 'LOCKED!';
@@ -2747,10 +3047,6 @@
             
             renderParams();
             renderFX();
-        }
-
-        function togglePatternSequencer() {
-            // Placeholder
         }
 
         function openConditionModal(trackId, stepIndex) {
@@ -2793,35 +3089,25 @@
         }
 
         function testSound() {
-            if (audioEngine && !audioEngine.initialized) {
-                audioEngine.init();
-            }
-            
             const track = state.tracks[state.selectedTrack];
             const morphedState = getMorphedState(track);
+            // Play morphed state (what you're hearing with the sliders)
             audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
         }
 
         function triggerSound() {
-            if (audioEngine && !audioEngine.initialized) {
-                audioEngine.init();
-            }
-            
             const track = state.tracks[state.selectedTrack];
             const morphedState = getMorphedState(track);
+            // Play morphed state (what you're hearing with the sliders)
             audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
             
+            // Visual feedback
             const btn = document.getElementById('trigger-btn');
             btn.classList.add('active');
             setTimeout(() => btn.classList.remove('active'), 100);
         }
 
-        // Initialize on DOM ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
+        window.onload = init;
     </script>
 </body>
 </html>
