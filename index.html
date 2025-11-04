@@ -60,6 +60,8 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             transition: all 0.2s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn:hover {
@@ -71,6 +73,11 @@
             background: #4a9eff;
             border-color: #4a9eff;
             color: #000;
+            transform: scale(0.97);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
         }
 
         .btn.secondary {
@@ -136,30 +143,6 @@
             gap: 12px;
             overflow-y: auto;
             padding-right: 10px;
-            transition: transform 0.3s ease;
-        }
-
-        .view-toggle {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            background: #4a9eff;
-            border: none;
-            color: #000;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 24px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
-            transition: all 0.2s;
-        }
-
-        .view-toggle:active {
-            transform: scale(0.95);
         }
 
         /* Mobile styles */
@@ -206,46 +189,26 @@
             }
 
             .tracks-panel {
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: #0a0a0a;
-                z-index: 1;
                 padding: 10px;
-                transform: translateX(0);
-            }
-
-            .tracks-panel.hidden {
-                transform: translateX(-100%);
             }
 
             .side-panel {
-                position: absolute;
+                position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
                 width: 100%;
                 background: #0a0a0a;
-                z-index: 2;
+                z-index: 1000;
                 padding: 15px;
                 transform: translateX(100%);
+                transition: transform 0.3s ease;
+                overflow-y: auto;
             }
 
             .side-panel.visible {
                 transform: translateX(0);
-            }
-
-            .view-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .back-btn {
-                display: flex !important;
             }
 
             .track {
@@ -261,6 +224,20 @@
                 align-items: center;
             }
 
+            .track-name {
+                cursor: pointer;
+                padding: 8px;
+                background: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 3px;
+                transition: all 0.2s;
+            }
+
+            .track-name:hover {
+                border-color: #4a9eff;
+                color: #4a9eff;
+            }
+
             .sequencer {
                 flex-direction: row;
                 gap: 3px;
@@ -273,6 +250,16 @@
                 flex-direction: column;
                 gap: 3px;
                 min-width: 40px;
+            }
+
+            .lock-buttons {
+                gap: 2px;
+            }
+
+            .lock-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 8px;
             }
 
             .step {
@@ -345,7 +332,6 @@
             display: flex;
             gap: 15px;
             align-items: stretch;
-            cursor: pointer;
             transition: all 0.2s;
         }
 
@@ -416,6 +402,46 @@
             gap: 4px;
         }
 
+        .lock-buttons {
+            display: flex;
+            gap: 3px;
+        }
+
+        .lock-btn {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #252525;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 9px;
+            font-weight: 600;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .lock-btn:hover {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        .lock-btn.active {
+            background: #4a9eff;
+            border-color: #4a9eff;
+            color: #000;
+        }
+
+        .lock-btn.slide-active {
+            background: #ff6b4a;
+            border-color: #ff6b4a;
+            color: #000;
+        }
+
         .step {
             flex: 1;
             min-height: 50px;
@@ -435,8 +461,8 @@
         }
 
         .step.active {
-            background: #4a9eff;
-            border-color: #4a9eff;
+            background: #4a4a4a;
+            border-color: #666;
         }
 
         .step.playing {
@@ -448,11 +474,12 @@
         }
 
         .step.has-locks {
-            border: 1px solid #ff6b4a;
+            background: #6b5a00;
+            border-color: #ffd700;
         }
 
         .step.has-locks.active {
-            background: linear-gradient(135deg, #4a9eff 0%, #ff6b4a 100%);
+            background: #8b7500;
         }
 
         .step-condition {
@@ -485,6 +512,54 @@
             overflow-y: auto;
         }
 
+        .side-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #252525;
+        }
+
+        .side-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #4a9eff;
+        }
+
+        .close-panel-btn {
+            display: none;
+            padding: 8px 16px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+            color: #e0e0e0;
+            transition: all 0.2s;
+        }
+
+        .close-panel-btn:hover {
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        #trigger-btn {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .close-panel-btn {
+                display: block;
+            }
+
+            #trigger-btn {
+                display: block;
+            }
+        }
+
         .section {
             display: flex;
             flex-direction: column;
@@ -499,65 +574,6 @@
             color: #666;
             border-bottom: 1px solid #252525;
             padding-bottom: 8px;
-            display: grid;
-            grid-template-columns: 32px 1fr auto;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .section-title > span {
-            text-align: left;
-        }
-
-        .back-btn {
-            display: none;
-            width: 32px;
-            height: 32px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 3px;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: #4a9eff;
-            transition: all 0.2s;
-            padding: 0;
-        }
-
-        .back-btn:hover {
-            border-color: #4a9eff;
-            background: #252525;
-        }
-
-        @media (min-width: 769px) {
-            .section-title {
-                grid-template-columns: 1fr auto;
-            }
-            
-            .back-btn {
-                display: none !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .back-btn {
-                display: flex;
-            }
-
-            .sequencer::-webkit-scrollbar {
-                height: 6px;
-            }
-
-            .sequencer::-webkit-scrollbar-track {
-                background: #0a0a0a;
-                border-radius: 3px;
-            }
-
-            .sequencer::-webkit-scrollbar-thumb {
-                background: #4a9eff;
-                border-radius: 3px;
-            }
         }
 
         .param-group {
@@ -738,7 +754,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
         }
 
         .modal.active {
@@ -784,6 +800,16 @@
             border-color: #4a9eff;
             color: #4a9eff;
         }
+
+        .global-controls {
+            background: #151515;
+            border: 1px solid #252525;
+            border-radius: 6px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -805,53 +831,35 @@
             <div class="tracks-panel" id="tracks-panel"></div>
 
             <div class="side-panel" id="side-panel">
-                <div class="section">
-                    <div class="section-title">
-                        <button class="back-btn" id="back-btn" style="grid-column: 1;">←</button>
-                        <span id="synth-title" style="grid-column: 2;">SYNTHESIS</span>
-                        <button class="btn secondary" id="param-lock-btn" style="padding: 6px 12px; font-size: 9px; grid-column: 3;">P.LOCK MODE</button>
+                <div class="side-panel-header">
+                    <div class="side-panel-title" id="synth-title">SYNTHESIS</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn secondary" id="trigger-btn" style="padding: 8px 16px; font-size: 10px;">TRIGGER</button>
+                        <button class="close-panel-btn" id="close-panel-btn">CLOSE</button>
                     </div>
-                    
-                    <div class="param-group">
-                        <div class="param-label">ENGINE</div>
-                        <div class="engine-select" id="engine-select"></div>
-                    </div>
+                </div>
 
+                <div class="section">
+                    <div class="section-title">ENGINE</div>
+                    <div class="engine-select" id="engine-select"></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button class="btn secondary" id="set-normal-btn">SET NORMAL</button>
+                        <button class="btn secondary" id="recall-normal-btn">RECALL NORMAL</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">PARAMETERS</div>
                     <div class="param-group" id="params-container"></div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">
-                        <span style="grid-column: 1 / -1;">FX CHAIN</span>
-                    </div>
+                    <div class="section-title">FX CHAIN</div>
                     <div class="fx-controls" id="fx-container"></div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">
-                        <span style="grid-column: 1 / -1;">MORPH</span>
-                    </div>
-                    <div class="morph-control">
-                        <div class="morph-header">
-                            <div class="morph-title">Current → Random</div>
-                            <div class="morph-buttons">
-                                <button class="morph-btn" id="generate-target-btn">Generate</button>
-                                <button class="morph-btn" id="lock-target-btn">Lock</button>
-                            </div>
-                        </div>
-                        <div class="param">
-                            <div class="param-value">
-                                <input type="range" class="slider" id="morph-slider" min="0" max="100" value="0">
-                                <div class="value-display" id="morph-value">0%</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">
-                        <span style="grid-column: 1 / -1;">QUICK ACTIONS</span>
-                    </div>
+                    <div class="section-title">QUICK ACTIONS</div>
                     <div class="param-group">
                         <button class="btn" id="randomize-pattern-btn">Randomize Pattern</button>
                         <button class="btn secondary" id="test-sound-btn">Test Sound</button>
@@ -861,7 +869,24 @@
             </div>
         </div>
 
-        <button class="view-toggle" id="view-toggle">⚙</button>
+        <div class="global-controls">
+            <div class="section-title">GLOBAL MORPH</div>
+            <div class="morph-control">
+                <div class="morph-header">
+                    <div class="morph-title">Current → Random</div>
+                    <div class="morph-buttons">
+                        <button class="morph-btn" id="global-generate-btn">Generate</button>
+                        <button class="morph-btn" id="global-lock-btn">Lock</button>
+                    </div>
+                </div>
+                <div class="param">
+                    <div class="param-value">
+                        <input type="range" class="slider" id="global-morph-slider" min="0" max="100" value="0">
+                        <div class="value-display" id="global-morph-value">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal" id="condition-modal">
@@ -999,9 +1024,8 @@
                 let current = source;
                 const now = this.audioContext.currentTime;
                 
-                // Wasp Filter (characteristic resonant filter with drive)
+                // Wasp Filter
                 if (fx.waspFilter > 0) {
-                    // Pre-drive
                     const preDrive = this.audioContext.createWaveShaper();
                     const driveCurve = new Float32Array(256);
                     for (let i = 0; i < 256; i++) {
@@ -1010,7 +1034,6 @@
                     }
                     preDrive.curve = driveCurve;
                     
-                    // Ladder filter simulation (4-pole)
                     const filter1 = this.audioContext.createBiquadFilter();
                     const filter2 = this.audioContext.createBiquadFilter();
                     const filter3 = this.audioContext.createBiquadFilter();
@@ -1077,7 +1100,7 @@
                     current = distGain;
                 }
                 
-                // Resonator (tuned feedback resonance)
+                // Resonator
                 if (fx.resonator > 0) {
                     const resDelay = this.audioContext.createDelay(1);
                     const resFilter = this.audioContext.createBiquadFilter();
@@ -1086,7 +1109,6 @@
                     const resDry = this.audioContext.createGain();
                     const resMerger = this.audioContext.createGain();
                     
-                    // Delay time based on frequency (resonant frequency)
                     const delayTime = 1 / (fx.resFreq || 440);
                     resDelay.delayTime.value = delayTime;
                     
@@ -1094,10 +1116,8 @@
                     resFilter.frequency.value = fx.resFreq || 440;
                     resFilter.Q.value = 20;
                     
-                    // Feedback creates the resonance
                     resFeedback.gain.value = 0.85 * fx.resonator;
                     
-                    // Envelope the resonance
                     const resDecay = fx.resDecay || 0.3;
                     resFeedback.gain.setValueAtTime(0.85 * fx.resonator, now);
                     resFeedback.gain.exponentialRampToValueAtTime(0.01, now + resDecay);
@@ -1164,7 +1184,7 @@
                     current = merger;
                 }
                 
-                // Glitch buffer (controllable stuttering)
+                // Glitch
                 if (fx.glitch > 0 && Math.random() < fx.glitch) {
                     const glitchGain = this.audioContext.createGain();
                     const stutterTime = fx.glitchRate || 0.1;
@@ -1206,7 +1226,6 @@
                 subOsc.frequency.setValueAtTime(startFreq * 0.5, now);
                 subOsc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq * 0.5), now + pitchDecay * punch);
                 
-                // Click
                 if (click > 0) {
                     const clickOsc = this.audioContext.createOscillator();
                     const clickGain = this.audioContext.createGain();
@@ -1303,7 +1322,6 @@
                 
                 const merger = this.audioContext.createGain();
                 
-                // Tonal component
                 const carrier = this.audioContext.createOscillator();
                 const modulator = this.audioContext.createOscillator();
                 const modGain = this.audioContext.createGain();
@@ -1324,7 +1342,6 @@
                 toneGain.gain.linearRampToValueAtTime(0.6 * (1 - noiseAmount), now + 0.001);
                 toneGain.gain.exponentialRampToValueAtTime(0.01, now + toneDecay);
                 
-                // Noise component
                 if (noiseAmount > 0) {
                     const bufferSize = this.audioContext.sampleRate * 2;
                     const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
@@ -1543,82 +1560,87 @@
             currentBar: 0,
             stepInBar: 0,
             selectedTrack: 'kick',
-            paramLockMode: false,
-            selectedStep: null,
             conditionModalStep: null,
             conditionModalTrack: null,
+            globalMorphAmount: 0,
             tracks: {
                 kick: {
                     name: 'KICK',
                     steps: Array(16).fill(false),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
+                    stepSlides: Array(16).fill(false),
                     mute: false,
                     engine: '808',
-                    params: { pitch: 1, pitchDecay: 0.05, decay: 0.5, punch: 1, drive: 1.5, sub: 0.3, click: 0, attack: 0.001 },
-                    fx: { waspFilter: 0, waspFreq: 2000, waspRes: 5, waspDrive: 2, drive: 1, distortion: 0, resonator: 0, resFreq: 440, resDecay: 0.3, delay: 0, delayTime: 0.25, reverb: 0, reverbSize: 2, glitch: 0, glitchRate: 0.1 },
-                    targetParams: null,
-                    morphAmount: 0
+                    params: {},
+                    fx: {},
+                    normalState: null,
+                    targetParams: null
                 },
                 snare: {
                     name: 'SNARE',
                     steps: Array(16).fill(false),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
+                    stepSlides: Array(16).fill(false),
                     mute: false,
                     engine: 'Snare',
-                    params: { pitch: 200, fmRatio: 1.6, fmAmount: 180, toneDecay: 0.08, noiseAmount: 0.65, noiseDecay: 0.12, snap: 1.5, tone: 1.2 },
-                    fx: { waspFilter: 0, waspFreq: 2000, waspRes: 5, waspDrive: 2, drive: 1, distortion: 0, resonator: 0, resFreq: 440, resDecay: 0.3, delay: 0, delayTime: 0.25, reverb: 0, reverbSize: 2, glitch: 0, glitchRate: 0.1 },
-                    targetParams: null,
-                    morphAmount: 0
+                    params: {},
+                    fx: {},
+                    normalState: null,
+                    targetParams: null
                 },
                 hihat: {
                     name: 'HI-HAT',
                     steps: Array(16).fill(false),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
+                    stepSlides: Array(16).fill(false),
                     mute: false,
                     engine: 'Noise',
-                    params: { decay: 0.04, tone: 1.8, spread: 12, attack: 0.001, shape: 1, density: 1, filterType: 1 },
-                    fx: { waspFilter: 0, waspFreq: 2000, waspRes: 5, waspDrive: 2, drive: 1, distortion: 0, resonator: 0, resFreq: 440, resDecay: 0.3, delay: 0, delayTime: 0.25, reverb: 0, reverbSize: 2, glitch: 0, glitchRate: 0.1 },
-                    targetParams: null,
-                    morphAmount: 0
+                    params: {},
+                    fx: {},
+                    normalState: null,
+                    targetParams: null
                 },
                 tom: {
                     name: 'TOM',
                     steps: Array(16).fill(false),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
+                    stepSlides: Array(16).fill(false),
                     mute: false,
                     engine: 'Physical',
-                    params: { pitch: 120, decay: 0.8, material: 1, tension: 1, strike: 0.003, position: 0.35, resonance: 5, damping: 0.7 },
-                    fx: { waspFilter: 0, waspFreq: 2000, waspRes: 5, waspDrive: 2, drive: 1, distortion: 0, resonator: 0, resFreq: 440, resDecay: 0.3, delay: 0, delayTime: 0.25, reverb: 0, reverbSize: 2, glitch: 0, glitchRate: 0.1 },
-                    targetParams: null,
-                    morphAmount: 0
+                    params: {},
+                    fx: {},
+                    normalState: null,
+                    targetParams: null
                 },
                 perc: {
                     name: 'PERC',
                     steps: Array(16).fill(false),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
+                    stepSlides: Array(16).fill(false),
                     mute: false,
                     engine: 'Modal',
-                    params: { pitch: 250, decay: 0.4, tone: 1.3, resonance: 10, stiffness: 1.5, strike: 0.001, damping: 0.9, spread: 1.05 },
-                    fx: { waspFilter: 0, waspFreq: 2000, waspRes: 5, waspDrive: 2, drive: 1, distortion: 0, resonator: 0, resFreq: 440, resDecay: 0.3, delay: 0, delayTime: 0.25, reverb: 0, reverbSize: 2, glitch: 0, glitchRate: 0.1 },
-                    targetParams: null,
-                    morphAmount: 0
+                    params: {},
+                    fx: {},
+                    normalState: null,
+                    targetParams: null
                 },
                 cymbal: {
                     name: 'CYMBAL',
                     steps: Array(16).fill(false),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
+                    stepSlides: Array(16).fill(false),
                     mute: false,
                     engine: 'Noise',
-                    params: { decay: 0.8, tone: 2.5, spread: 8, attack: 0.001, shape: 1.5, density: 0.9, filterType: 1 },
-                    fx: { waspFilter: 0, waspFreq: 2000, waspRes: 5, waspDrive: 2, drive: 1, distortion: 0, resonator: 0, resFreq: 440, resDecay: 0.3, delay: 0, delayTime: 0.25, reverb: 0, reverbSize: 2, glitch: 0, glitchRate: 0.1 },
-                    targetParams: null,
-                    morphAmount: 0
+                    params: {},
+                    fx: {},
+                    normalState: null,
+                    targetParams: null
                 }
             }
         };
@@ -1628,6 +1650,86 @@
 
         function lerp(a, b, t) {
             return a + (b - a) * t;
+        }
+
+        function initializeTrackDefaults(trackId) {
+            const track = state.tracks[trackId];
+            const engineSpec = ENGINE_SPECS[track.engine];
+            
+            // Initialize params with defaults
+            track.params = {};
+            Object.entries(engineSpec.params).forEach(([key, spec]) => {
+                track.params[key] = spec.default;
+            });
+            
+            // Initialize FX with defaults
+            track.fx = {};
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                track.fx[key] = spec.default;
+            });
+            
+            // Set normal state
+            setNormalState(trackId);
+        }
+
+        function setNormalState(trackId) {
+            const track = state.tracks[trackId];
+            track.normalState = {
+                engine: track.engine,
+                params: { ...track.params },
+                fx: { ...track.fx }
+            };
+        }
+
+        function setNormalButtonClick() {
+            const trackId = state.selectedTrack;
+            setNormalState(trackId);
+            
+            // Visual feedback
+            const btn = document.getElementById('set-normal-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'SAVED!';
+            btn.classList.add('active');
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('active');
+            }, 500);
+            
+            // Update sidebar to show the indicator
+            renderSidebar();
+        }
+
+        function recallNormalState() {
+            const track = state.tracks[state.selectedTrack];
+            
+            if (!track.normalState) {
+                // If no normal state saved, initialize with defaults
+                initializeTrackDefaults(state.selectedTrack);
+            }
+            
+            // Load the normal state into current editing parameters
+            track.engine = track.normalState.engine;
+            track.params = { ...track.normalState.params };
+            track.fx = { ...track.normalState.fx };
+            
+            // Reset global morph
+            state.globalMorphAmount = 0;
+            track.targetParams = null;
+            document.getElementById('global-morph-slider').value = 0;
+            document.getElementById('global-morph-value').textContent = '0%';
+            
+            // Visual feedback
+            const btn = document.getElementById('recall-normal-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'RECALLED!';
+            btn.classList.add('active');
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('active');
+            }, 500);
+            
+            // Re-render to show the recalled parameters
+            renderSidebar();
         }
 
         function generateRandomParams(engineId) {
@@ -1640,28 +1742,45 @@
             return randomParams;
         }
 
-        function getMorphedParams(track) {
-            if (!track.targetParams || track.morphAmount === 0) return track.params;
+        function generateRandomFX() {
+            const randomFX = {};
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                const range = spec.max - spec.min;
+                randomFX[key] = spec.min + Math.random() * range;
+            });
+            return randomFX;
+        }
+
+        function getMorphedState(track) {
+            if (!track.targetParams || state.globalMorphAmount === 0) {
+                return {
+                    engine: track.engine,
+                    params: { ...track.params },
+                    fx: { ...track.fx }
+                };
+            }
             
-            const morphed = {};
-            const t = track.morphAmount / 100;
+            const t = state.globalMorphAmount / 100;
+            const morphedParams = {};
+            const morphedFX = {};
             
             Object.keys(track.params).forEach(key => {
                 const current = track.params[key];
-                const target = track.targetParams[key];
-                morphed[key] = lerp(current, target !== undefined ? target : current, t);
+                const target = track.targetParams.params[key];
+                morphedParams[key] = lerp(current, target !== undefined ? target : current, t);
             });
             
-            return morphed;
-        }
-
-        function getStepParams(track, stepIndex) {
-            const baseParams = getMorphedParams(track);
-            const locks = track.stepLocks[stepIndex];
+            Object.keys(track.fx).forEach(key => {
+                const current = track.fx[key];
+                const target = track.targetParams.fx[key];
+                morphedFX[key] = lerp(current, target !== undefined ? target : current, t);
+            });
             
-            if (!locks) return baseParams;
-            
-            return { ...baseParams, ...locks };
+            return {
+                engine: t > 0.5 ? track.targetParams.engine : track.engine,
+                params: morphedParams,
+                fx: morphedFX
+            };
         }
 
         function shouldTrigger(condition, currentBar) {
@@ -1673,6 +1792,12 @@
 
         function init() {
             audioEngine = new DrumSynthEngine();
+            
+            // Initialize all tracks with defaults
+            Object.keys(state.tracks).forEach(trackId => {
+                initializeTrackDefaults(trackId);
+            });
+            
             renderTracks();
             renderSidebar();
             setupEventListeners();
@@ -1709,6 +1834,18 @@
                             stepEl.classList.toggle('playing', i === state.currentStep);
                             stepEl.classList.toggle('has-locks', hasLocks);
                             
+                            // Update P and S buttons
+                            const pBtn = container.querySelector('.p-lock-btn');
+                            const sBtn = container.querySelector('.s-lock-btn');
+                            
+                            if (pBtn) {
+                                pBtn.classList.toggle('active', hasLocks);
+                            }
+                            
+                            if (sBtn) {
+                                sBtn.classList.toggle('slide-active', track.stepSlides[i]);
+                            }
+                            
                             const conditionEl = container.querySelector('.step-condition');
                             if (conditionEl) {
                                 conditionEl.textContent = track.stepConditions[i];
@@ -1723,7 +1860,6 @@
             const trackEl = document.createElement('div');
             trackEl.className = `track ${state.selectedTrack === trackId ? 'selected' : ''} ${track.mute ? 'muted' : ''}`;
             trackEl.setAttribute('data-track-id', trackId);
-            trackEl.onclick = () => selectTrack(trackId);
 
             const header = document.createElement('div');
             header.className = 'track-header';
@@ -1731,6 +1867,10 @@
             const name = document.createElement('div');
             name.className = 'track-name';
             name.textContent = track.name;
+            name.onclick = (e) => {
+                e.stopPropagation();
+                selectTrack(trackId);
+            };
             
             const controls = document.createElement('div');
             controls.className = 'track-controls';
@@ -1773,16 +1913,35 @@
                 const container = document.createElement('div');
                 container.className = 'step-container';
                 
+                // Lock buttons (P and S)
+                const lockButtons = document.createElement('div');
+                lockButtons.className = 'lock-buttons';
+                
+                const pBtn = document.createElement('div');
+                pBtn.className = 'lock-btn p-lock-btn';
+                pBtn.textContent = 'P';
+                pBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    togglePLock(trackId, i);
+                };
+                
+                const sBtn = document.createElement('div');
+                sBtn.className = 'lock-btn s-lock-btn';
+                sBtn.textContent = 'S';
+                sBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSLock(trackId, i);
+                };
+                
+                lockButtons.appendChild(pBtn);
+                lockButtons.appendChild(sBtn);
+                
                 const step = document.createElement('div');
                 const hasLocks = track.stepLocks[i] !== null;
                 step.className = `step ${track.steps[i] ? 'active' : ''} ${i % 4 === 0 ? 'beat-4' : ''} ${hasLocks ? 'has-locks' : ''}`;
                 step.onclick = (e) => {
                     e.stopPropagation();
-                    if (state.paramLockMode) {
-                        selectStepForLock(trackId, i);
-                    } else {
-                        toggleStep(trackId, i);
-                    }
+                    toggleStep(trackId, i);
                 };
                 
                 const condition = document.createElement('div');
@@ -1793,6 +1952,7 @@
                     openConditionModal(trackId, i);
                 };
                 
+                container.appendChild(lockButtons);
                 container.appendChild(step);
                 container.appendChild(condition);
                 sequencer.appendChild(container);
@@ -1806,16 +1966,14 @@
 
         function renderSidebar() {
             const selectedTrack = state.tracks[state.selectedTrack];
-            let title = `${selectedTrack.name} — ${ENGINE_SPECS[selectedTrack.engine].name}`;
-            if (state.paramLockMode && state.selectedStep !== null) {
-                title += ` [STEP ${state.selectedStep + 1}]`;
-            }
+            const hasNormalState = selectedTrack.normalState !== null;
+            const indicator = hasNormalState ? ' ●' : '';
+            const title = `${selectedTrack.name} — ${ENGINE_SPECS[selectedTrack.engine].name}${indicator}`;
             document.getElementById('synth-title').textContent = title;
             
             renderEngineSelect();
             renderParams();
             renderFX();
-            updateMorphDisplay();
         }
 
         function renderEngineSelect() {
@@ -1837,12 +1995,8 @@
             const selectedTrack = state.tracks[state.selectedTrack];
             const engineSpec = ENGINE_SPECS[selectedTrack.engine];
             
-            let displayParams;
-            if (state.paramLockMode && state.selectedStep !== null) {
-                displayParams = getStepParams(selectedTrack, state.selectedStep);
-            } else {
-                displayParams = getMorphedParams(selectedTrack);
-            }
+            // Always display current working params (track.params), not normal state
+            const displayParams = selectedTrack.params;
             
             const container = document.getElementById('params-container');
             container.innerHTML = '';
@@ -1890,6 +2044,9 @@
             container.innerHTML = '';
             
             const selectedTrack = state.tracks[state.selectedTrack];
+            
+            // Always display current working FX (track.fx), not normal state
+            const displayFX = selectedTrack.fx;
 
             Object.entries(FX_SPECS).forEach(([key, spec]) => {
                 const paramDiv = document.createElement('div');
@@ -1908,7 +2065,7 @@
                 slider.min = spec.min;
                 slider.max = spec.max;
                 slider.step = spec.step;
-                slider.value = selectedTrack.fx[key] !== undefined ? selectedTrack.fx[key] : spec.default;
+                slider.value = displayFX[key] !== undefined ? displayFX[key] : spec.default;
                 
                 const display = document.createElement('div');
                 display.className = 'value-display';
@@ -1929,15 +2086,6 @@
             });
         }
 
-        function updateMorphDisplay() {
-            const track = state.tracks[state.selectedTrack];
-            const morphSlider = document.getElementById('morph-slider');
-            const morphValue = document.getElementById('morph-value');
-            
-            morphSlider.value = track.morphAmount;
-            morphValue.textContent = track.morphAmount.toFixed(0) + '%';
-        }
-
         function setupEventListeners() {
             document.getElementById('play-btn').onclick = togglePlay;
             document.getElementById('reset-btn').onclick = reset;
@@ -1953,24 +2101,24 @@
             
             document.getElementById('randomize-pattern-btn').onclick = () => randomizePattern(state.selectedTrack);
             document.getElementById('test-sound-btn').onclick = testSound;
-            document.getElementById('param-lock-btn').onclick = toggleParamLockMode;
             document.getElementById('clear-locks-btn').onclick = clearAllLocks;
+            document.getElementById('set-normal-btn').onclick = setNormalButtonClick;
+            document.getElementById('recall-normal-btn').onclick = recallNormalState;
+            document.getElementById('trigger-btn').onclick = triggerSound;
             
-            document.getElementById('generate-target-btn').onclick = generateTarget;
-            document.getElementById('lock-target-btn').onclick = lockTarget;
-            document.getElementById('morph-slider').oninput = (e) => {
-                const track = state.tracks[state.selectedTrack];
-                track.morphAmount = parseFloat(e.target.value);
-                updateMorphDisplay();
+            // Global morph
+            document.getElementById('global-generate-btn').onclick = generateGlobalTarget;
+            document.getElementById('global-lock-btn').onclick = lockGlobalTarget;
+            document.getElementById('global-morph-slider').oninput = (e) => {
+                state.globalMorphAmount = parseFloat(e.target.value);
+                document.getElementById('global-morph-value').textContent = state.globalMorphAmount.toFixed(0) + '%';
                 renderParams();
+                renderFX();
             };
             
-            // Mobile view toggle
-            document.getElementById('view-toggle').onclick = toggleMobileView;
-            document.getElementById('back-btn').onclick = () => {
-                if (window.innerWidth <= 768 && mobileViewState === 'params') {
-                    toggleMobileView();
-                }
+            // Mobile close button
+            document.getElementById('close-panel-btn').onclick = () => {
+                document.getElementById('side-panel').classList.remove('visible');
             };
             
             // Modal
@@ -1979,28 +2127,6 @@
                     closeConditionModal();
                 }
             };
-        }
-
-        let mobileViewState = 'sequencer'; // 'sequencer' or 'params'
-
-        function toggleMobileView() {
-            const tracksPanel = document.getElementById('tracks-panel');
-            const sidePanel = document.getElementById('side-panel');
-            const toggleBtn = document.getElementById('view-toggle');
-            
-            if (mobileViewState === 'sequencer') {
-                // Show params
-                tracksPanel.classList.add('hidden');
-                sidePanel.classList.add('visible');
-                toggleBtn.textContent = '◀';
-                mobileViewState = 'params';
-            } else {
-                // Show sequencer
-                tracksPanel.classList.remove('hidden');
-                sidePanel.classList.remove('visible');
-                toggleBtn.textContent = '⚙';
-                mobileViewState = 'sequencer';
-            }
         }
 
         function togglePlay() {
@@ -2035,8 +2161,99 @@
                     const condition = track.stepConditions[state.currentStep];
                     
                     if (track.steps[state.currentStep] && !track.mute && shouldTrigger(condition, state.currentBar)) {
-                        const params = getStepParams(track, state.currentStep);
-                        audioEngine.playDrum(track.engine, params, track.fx);
+                        let finalEngine, finalParams, finalFX;
+                        
+                        // First, determine the BASE sound for this step
+                        let baseEngine, baseParams, baseFX;
+                        const currentLock = track.stepLocks[state.currentStep];
+                        
+                        if (currentLock) {
+                            // P-locked step - use locked values as base
+                            baseEngine = currentLock.engine;
+                            baseParams = currentLock.params;
+                            baseFX = currentLock.fx;
+                        } else if (track.normalState) {
+                            // No P-lock - use Set Normal as base
+                            baseEngine = track.normalState.engine;
+                            baseParams = track.normalState.params;
+                            baseFX = track.normalState.fx;
+                        } else {
+                            // Fallback to current working state
+                            baseEngine = track.engine;
+                            baseParams = track.params;
+                            baseFX = track.fx;
+                        }
+                        
+                        // Now check if S-Mode is enabled on this step (independent of P-lock)
+                        const slideEnabled = track.stepSlides[state.currentStep];
+                        
+                        if (slideEnabled) {
+                            // Find the next active step
+                            let nextActiveStep = null;
+                            for (let i = 1; i < 16; i++) {
+                                const nextIdx = (state.currentStep + i) % 16;
+                                if (track.steps[nextIdx]) {
+                                    nextActiveStep = nextIdx;
+                                    break;
+                                }
+                            }
+                            
+                            if (nextActiveStep !== null) {
+                                // Get the TARGET sound (next step's sound)
+                                let targetEngine, targetParams, targetFX;
+                                const nextLock = track.stepLocks[nextActiveStep];
+                                
+                                if (nextLock) {
+                                    // Next step is P-locked
+                                    targetEngine = nextLock.engine;
+                                    targetParams = nextLock.params;
+                                    targetFX = nextLock.fx;
+                                } else if (track.normalState) {
+                                    // Next step uses Set Normal
+                                    targetEngine = track.normalState.engine;
+                                    targetParams = track.normalState.params;
+                                    targetFX = track.normalState.fx;
+                                } else {
+                                    // Fallback
+                                    targetEngine = track.engine;
+                                    targetParams = track.params;
+                                    targetFX = track.fx;
+                                }
+                                
+                                // BLEND from base to target (70% toward target for noticeable slide)
+                                const t = 0.7;
+                                const blendedParams = {};
+                                const blendedFX = {};
+                                
+                                Object.keys(baseParams).forEach(key => {
+                                    const current = baseParams[key];
+                                    const target = targetParams[key] !== undefined ? targetParams[key] : current;
+                                    blendedParams[key] = lerp(current, target, t);
+                                });
+                                
+                                Object.keys(baseFX).forEach(key => {
+                                    const current = baseFX[key];
+                                    const target = targetFX[key] !== undefined ? targetFX[key] : current;
+                                    blendedFX[key] = lerp(current, target, t);
+                                });
+                                
+                                finalEngine = baseEngine; // Keep base engine
+                                finalParams = blendedParams;
+                                finalFX = blendedFX;
+                            } else {
+                                // No next step found, just use base
+                                finalEngine = baseEngine;
+                                finalParams = baseParams;
+                                finalFX = baseFX;
+                            }
+                        } else {
+                            // No slide - just use base sound directly
+                            finalEngine = baseEngine;
+                            finalParams = baseParams;
+                            finalFX = baseFX;
+                        }
+                        
+                        audioEngine.playDrum(finalEngine, finalParams, finalFX);
                     }
                 });
                 
@@ -2073,27 +2290,44 @@
 
         function selectTrack(trackId) {
             state.selectedTrack = trackId;
-            state.paramLockMode = false;
-            state.selectedStep = null;
-            document.getElementById('param-lock-btn').classList.remove('active');
             renderTracks();
             renderSidebar();
             
-            // On mobile, automatically show params when selecting a track
+            // On mobile, show params panel
             if (window.innerWidth <= 768) {
-                const tracksPanel = document.getElementById('tracks-panel');
-                const sidePanel = document.getElementById('side-panel');
-                const toggleBtn = document.getElementById('view-toggle');
-                
-                tracksPanel.classList.add('hidden');
-                sidePanel.classList.add('visible');
-                toggleBtn.textContent = '◀';
-                mobileViewState = 'params';
+                document.getElementById('side-panel').classList.add('visible');
             }
         }
 
         function toggleStep(trackId, stepIndex) {
             state.tracks[trackId].steps[stepIndex] = !state.tracks[trackId].steps[stepIndex];
+            renderTracks();
+        }
+
+        function togglePLock(trackId, stepIndex) {
+            const track = state.tracks[trackId];
+            
+            if (track.stepLocks[stepIndex]) {
+                // Remove lock
+                track.stepLocks[stepIndex] = null;
+            } else {
+                // Store current state as lock
+                track.stepLocks[stepIndex] = {
+                    engine: track.engine,
+                    params: { ...track.params },
+                    fx: { ...track.fx }
+                };
+            }
+            
+            renderTracks();
+        }
+
+        function toggleSLock(trackId, stepIndex) {
+            const track = state.tracks[trackId];
+            
+            // Simply toggle the slide flag - works independent of P-lock
+            track.stepSlides[stepIndex] = !track.stepSlides[stepIndex];
+            
             renderTracks();
         }
 
@@ -2123,11 +2357,28 @@
                 newParams[key] = spec.default;
             });
             track.params = newParams;
-            track.targetParams = null;
-            track.morphAmount = 0;
             
-            // Clear step locks when changing engine
-            track.stepLocks = Array(16).fill(null);
+            // Reset FX to defaults
+            const newFX = {};
+            Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                newFX[key] = spec.default;
+            });
+            track.fx = newFX;
+            
+            // Update normal state with new engine defaults
+            setNormalState(state.selectedTrack);
+            
+            // Visual feedback that normal state was set
+            const btn = document.getElementById('set-normal-btn');
+            if (btn) {
+                const originalText = btn.textContent;
+                btn.textContent = 'AUTO SAVED';
+                btn.classList.add('active');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('active');
+                }, 500);
+            }
             
             renderTracks();
             renderSidebar();
@@ -2135,21 +2386,7 @@
 
         function updateParam(key, value) {
             const track = state.tracks[state.selectedTrack];
-            
-            if (state.paramLockMode && state.selectedStep !== null) {
-                // Update step lock
-                if (!track.stepLocks[state.selectedStep]) {
-                    track.stepLocks[state.selectedStep] = {};
-                }
-                track.stepLocks[state.selectedStep][key] = value;
-                renderTracks();
-            } else {
-                // Update track param and reset morph
-                track.params[key] = value;
-                track.morphAmount = 0;
-                track.targetParams = null;
-                updateMorphDisplay();
-            }
+            track.params[key] = value;
         }
 
         function updateFX(key, value) {
@@ -2157,30 +2394,40 @@
             track.fx[key] = value;
         }
 
-        function toggleParamLockMode() {
-            state.paramLockMode = !state.paramLockMode;
-            document.getElementById('param-lock-btn').classList.toggle('active', state.paramLockMode);
-            
-            if (!state.paramLockMode) {
-                state.selectedStep = null;
-            }
-            
-            renderSidebar();
-        }
-
-        function selectStepForLock(trackId, stepIndex) {
-            if (trackId !== state.selectedTrack) return;
-            
-            state.selectedStep = stepIndex;
-            renderSidebar();
-        }
-
         function clearAllLocks() {
             const track = state.tracks[state.selectedTrack];
             track.stepLocks = Array(16).fill(null);
-            state.selectedStep = null;
             renderTracks();
-            renderSidebar();
+        }
+
+        function generateGlobalTarget() {
+            Object.keys(state.tracks).forEach(trackId => {
+                const track = state.tracks[trackId];
+                track.targetParams = {
+                    engine: track.engine,
+                    params: generateRandomParams(track.engine),
+                    fx: generateRandomFX()
+                };
+            });
+        }
+
+        function lockGlobalTarget() {
+            Object.keys(state.tracks).forEach(trackId => {
+                const track = state.tracks[trackId];
+                if (track.targetParams) {
+                    const morphed = getMorphedState(track);
+                    track.params = { ...morphed.params };
+                    track.fx = { ...morphed.fx };
+                    track.targetParams = null;
+                }
+            });
+            
+            state.globalMorphAmount = 0;
+            document.getElementById('global-morph-slider').value = 0;
+            document.getElementById('global-morph-value').textContent = '0%';
+            
+            renderParams();
+            renderFX();
         }
 
         function openConditionModal(trackId, stepIndex) {
@@ -2217,33 +2464,21 @@
             closeConditionModal();
         }
 
-        function generateTarget() {
-            const track = state.tracks[state.selectedTrack];
-            track.targetParams = generateRandomParams(track.engine);
-        }
-
-        function lockTarget() {
-            const track = state.tracks[state.selectedTrack];
-            if (track.targetParams) {
-                track.params = getMorphedParams(track);
-                track.targetParams = null;
-                track.morphAmount = 0;
-                renderParams();
-                updateMorphDisplay();
-            }
-        }
-
         function testSound() {
             const track = state.tracks[state.selectedTrack];
-            let params;
+            // Play current working state (what you're editing)
+            audioEngine.playDrum(track.engine, track.params, track.fx);
+        }
+
+        function triggerSound() {
+            const track = state.tracks[state.selectedTrack];
+            // Play current working state (what you're editing)
+            audioEngine.playDrum(track.engine, track.params, track.fx);
             
-            if (state.paramLockMode && state.selectedStep !== null) {
-                params = getStepParams(track, state.selectedStep);
-            } else {
-                params = getMorphedParams(track);
-            }
-            
-            audioEngine.playDrum(track.engine, params, track.fx);
+            // Visual feedback
+            const btn = document.getElementById('trigger-btn');
+            btn.classList.add('active');
+            setTimeout(() => btn.classList.remove('active'), 100);
         }
 
         window.onload = init;
