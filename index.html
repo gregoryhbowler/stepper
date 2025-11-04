@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Experimental Drum Machine</title>
+    <title>stepper</title>
     <style>
         * {
             margin: 0;
@@ -35,10 +35,9 @@
         }
 
         .title {
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            text-transform: uppercase;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 2px;
             color: #666;
         }
 
@@ -159,7 +158,7 @@
             }
 
             .title {
-                font-size: 10px;
+                font-size: 12px;
             }
 
             .transport {
@@ -452,8 +451,9 @@
             transition: all 0.1s;
             position: relative;
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
+            overflow: hidden;
         }
 
         .step:hover {
@@ -480,6 +480,33 @@
 
         .step.has-locks.active {
             background: #8b7500;
+        }
+
+        .velocity-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, #4a9eff, rgba(74, 158, 255, 0.3));
+            pointer-events: none;
+            transition: height 0.1s;
+        }
+
+        .velocity-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 9px;
+            font-weight: 600;
+            color: #4a9eff;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .step:hover .velocity-value {
+            opacity: 1;
         }
 
         .step-condition {
@@ -815,7 +842,7 @@
 <body>
     <div class="app">
         <div class="header">
-            <div class="title">Experimental Drum Machine</div>
+            <div class="title">stepper</div>
             <div class="transport">
                 <div class="bar-indicator" id="bar-indicator">Bar: 1/4</div>
                 <div class="tempo">
@@ -1003,6 +1030,7 @@
                 this.masterGain = this.audioContext.createGain();
                 this.masterGain.connect(this.audioContext.destination);
                 this.masterGain.gain.value = 0.5;
+                this.activeSlides = new Map(); // Track active slide sounds
             }
 
             createReverbImpulse(size = 2) {
@@ -1533,7 +1561,7 @@
                 return output;
             }
 
-            playDrum(engine, params, fx) {
+            playDrum(engine, params, fx, velocity = 1) {
                 const engineMap = {
                     '808': () => this.create808Kick(params),
                     'FM': () => this.createFMDrum(params),
@@ -1547,7 +1575,74 @@
                 if (createEngine) {
                     const source = createEngine();
                     const withFX = this.applyFX(source, fx);
-                    withFX.connect(this.masterGain);
+                    
+                    // Apply velocity
+                    const velocityGain = this.audioContext.createGain();
+                    velocityGain.gain.value = velocity;
+                    withFX.connect(velocityGain);
+                    velocityGain.connect(this.masterGain);
+                }
+            }
+
+            // Play a slide sound that morphs from start to end params over duration
+            playSlide(trackId, engine, startParams, endParams, startFX, endFX, duration, velocity = 1) {
+                // Cancel any existing slide for this track
+                if (this.activeSlides.has(trackId)) {
+                    this.activeSlides.get(trackId).forEach(node => {
+                        try { node.disconnect(); } catch(e) {}
+                    });
+                }
+
+                const now = this.audioContext.currentTime;
+                const nodes = [];
+                
+                // Create a continuous oscillator-based sound that we can morph
+                const engineMap = {
+                    '808': () => this.create808Kick(startParams),
+                    'FM': () => this.createFMDrum(startParams),
+                    'Snare': () => this.createSnareDrum(startParams),
+                    'Noise': () => this.createNoiseDrum(startParams),
+                    'Modal': () => this.createModalDrum(startParams),
+                    'Physical': () => this.createPhysicalDrum(startParams)
+                };
+
+                const createEngine = engineMap[engine];
+                if (createEngine) {
+                    const source = createEngine();
+                    const withFX = this.applyFX(source, startFX);
+                    
+                    // Apply velocity and create envelope for the slide
+                    const velocityGain = this.audioContext.createGain();
+                    const slideEnvelope = this.audioContext.createGain();
+                    
+                    velocityGain.gain.value = velocity;
+                    
+                    // Smooth decay over the slide duration
+                    slideEnvelope.gain.setValueAtTime(1, now);
+                    slideEnvelope.gain.exponentialRampToValueAtTime(0.1, now + duration);
+                    
+                    withFX.connect(velocityGain);
+                    velocityGain.connect(slideEnvelope);
+                    slideEnvelope.connect(this.masterGain);
+                    
+                    nodes.push(withFX, velocityGain, slideEnvelope);
+                    
+                    this.activeSlides.set(trackId, nodes);
+                    
+                    // Clean up after duration
+                    setTimeout(() => {
+                        this.activeSlides.delete(trackId);
+                    }, duration * 1000 + 100);
+                }
+            }
+
+            stopSlide(trackId) {
+                if (this.activeSlides.has(trackId)) {
+                    const nodes = this.activeSlides.get(trackId);
+                    nodes.forEach(node => {
+                        try { node.disconnect(); } catch(e) {}
+                    });
+                    this.activeSlides.delete(trackId);
                 }
             }
         }
@@ -1567,6 +1662,7 @@
                 kick: {
                     name: 'KICK',
                     steps: Array(16).fill(false),
+                    velocities: Array(16).fill(0.8),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
                     stepSlides: Array(16).fill(false),
@@ -1580,6 +1676,7 @@
                 snare: {
                     name: 'SNARE',
                     steps: Array(16).fill(false),
+                    velocities: Array(16).fill(0.8),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
                     stepSlides: Array(16).fill(false),
@@ -1593,6 +1690,7 @@
                 hihat: {
                     name: 'HI-HAT',
                     steps: Array(16).fill(false),
+                    velocities: Array(16).fill(0.8),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
                     stepSlides: Array(16).fill(false),
@@ -1606,6 +1704,7 @@
                 tom: {
                     name: 'TOM',
                     steps: Array(16).fill(false),
+                    velocities: Array(16).fill(0.8),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
                     stepSlides: Array(16).fill(false),
@@ -1619,6 +1718,7 @@
                 perc: {
                     name: 'PERC',
                     steps: Array(16).fill(false),
+                    velocities: Array(16).fill(0.8),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
                     stepSlides: Array(16).fill(false),
@@ -1632,6 +1732,7 @@
                 cymbal: {
                     name: 'CYMBAL',
                     steps: Array(16).fill(false),
+                    velocities: Array(16).fill(0.8),
                     stepConditions: Array(16).fill('1:1'),
                     stepLocks: Array(16).fill(null),
                     stepSlides: Array(16).fill(false),
@@ -1647,6 +1748,7 @@
 
         let audioEngine = null;
         let sequencerInterval = null;
+        let dragState = null;
 
         function lerp(a, b, t) {
             return a + (b - a) * t;
@@ -1834,6 +1936,15 @@
                             stepEl.classList.toggle('playing', i === state.currentStep);
                             stepEl.classList.toggle('has-locks', hasLocks);
                             
+                            // Update velocity bar
+                            const velocityBar = stepEl.querySelector('.velocity-bar');
+                            const velocityValue = stepEl.querySelector('.velocity-value');
+                            if (velocityBar && velocityValue) {
+                                const velocity = track.velocities[i];
+                                velocityBar.style.height = (velocity * 100) + '%';
+                                velocityValue.textContent = Math.round(velocity * 100);
+                            }
+                            
                             // Update P and S buttons
                             const pBtn = container.querySelector('.p-lock-btn');
                             const sBtn = container.querySelector('.s-lock-btn');
@@ -1939,10 +2050,21 @@
                 const step = document.createElement('div');
                 const hasLocks = track.stepLocks[i] !== null;
                 step.className = `step ${track.steps[i] ? 'active' : ''} ${i % 4 === 0 ? 'beat-4' : ''} ${hasLocks ? 'has-locks' : ''}`;
-                step.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleStep(trackId, i);
-                };
+                
+                // Add velocity bar and value display
+                const velocityBar = document.createElement('div');
+                velocityBar.className = 'velocity-bar';
+                velocityBar.style.height = (track.velocities[i] * 100) + '%';
+                
+                const velocityValue = document.createElement('div');
+                velocityValue.className = 'velocity-value';
+                velocityValue.textContent = Math.round(track.velocities[i] * 100);
+                
+                step.appendChild(velocityBar);
+                step.appendChild(velocityValue);
+                
+                // Mouse events for velocity dragging
+                step.onmousedown = (e) => handleStepMouseDown(e, trackId, i);
                 
                 const condition = document.createElement('div');
                 condition.className = 'step-condition';
@@ -1962,6 +2084,62 @@
             trackEl.appendChild(sequencer);
             
             return trackEl;
+        }
+
+        function handleStepMouseDown(e, trackId, stepIndex) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const step = e.currentTarget;
+            const rect = step.getBoundingClientRect();
+            const startY = e.clientY;
+            const startVelocity = state.tracks[trackId].velocities[stepIndex];
+            
+            dragState = {
+                trackId,
+                stepIndex,
+                startY,
+                startVelocity,
+                isDragging: false,
+                wasActive: state.tracks[trackId].steps[stepIndex]
+            };
+            
+            const handleMouseMove = (moveEvent) => {
+                if (!dragState) return;
+                
+                const deltaY = dragState.startY - moveEvent.clientY;
+                const sensitivity = 0.003;
+                
+                if (Math.abs(deltaY) > 3) {
+                    dragState.isDragging = true;
+                }
+                
+                if (dragState.isDragging) {
+                    let newVelocity = dragState.startVelocity + (deltaY * sensitivity);
+                    newVelocity = Math.max(0, Math.min(1, newVelocity));
+                    
+                    state.tracks[trackId].velocities[stepIndex] = newVelocity;
+                    
+                    if (!state.tracks[trackId].steps[stepIndex]) {
+                        state.tracks[trackId].steps[stepIndex] = true;
+                    }
+                    
+                    renderTracks();
+                }
+            };
+            
+            const handleMouseUp = () => {
+                if (dragState && !dragState.isDragging) {
+                    toggleStep(trackId, stepIndex);
+                }
+                
+                dragState = null;
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
         }
 
         function renderSidebar() {
@@ -2161,9 +2339,9 @@
                     const condition = track.stepConditions[state.currentStep];
                     
                     if (track.steps[state.currentStep] && !track.mute && shouldTrigger(condition, state.currentBar)) {
-                        let finalEngine, finalParams, finalFX;
+                        const velocity = track.velocities[state.currentStep];
                         
-                        // First, determine the BASE sound for this step
+                        // Determine the sound to play at this step
                         let baseEngine, baseParams, baseFX;
                         const currentLock = track.stepLocks[state.currentStep];
                         
@@ -2184,76 +2362,57 @@
                             baseFX = track.fx;
                         }
                         
-                        // Now check if S-Mode is enabled on this step (independent of P-lock)
+                        // Check if S-Mode (slide) is enabled
                         const slideEnabled = track.stepSlides[state.currentStep];
                         
                         if (slideEnabled) {
                             // Find the next active step
                             let nextActiveStep = null;
-                            for (let i = 1; i < 16; i++) {
+                            let stepsToNext = 0;
+                            for (let i = 1; i <= 16; i++) {
                                 const nextIdx = (state.currentStep + i) % 16;
                                 if (track.steps[nextIdx]) {
                                     nextActiveStep = nextIdx;
+                                    stepsToNext = i;
                                     break;
                                 }
                             }
                             
                             if (nextActiveStep !== null) {
+                                // Calculate slide duration in seconds
+                                const slideDuration = (stepsToNext * stepDuration) / 1000;
+                                
                                 // Get the TARGET sound (next step's sound)
                                 let targetEngine, targetParams, targetFX;
                                 const nextLock = track.stepLocks[nextActiveStep];
                                 
                                 if (nextLock) {
-                                    // Next step is P-locked
                                     targetEngine = nextLock.engine;
                                     targetParams = nextLock.params;
                                     targetFX = nextLock.fx;
                                 } else if (track.normalState) {
-                                    // Next step uses Set Normal
                                     targetEngine = track.normalState.engine;
                                     targetParams = track.normalState.params;
                                     targetFX = track.normalState.fx;
                                 } else {
-                                    // Fallback
                                     targetEngine = track.engine;
                                     targetParams = track.params;
                                     targetFX = track.fx;
                                 }
                                 
-                                // BLEND from base to target (70% toward target for noticeable slide)
-                                const t = 0.7;
-                                const blendedParams = {};
-                                const blendedFX = {};
+                                // Play initial sound and then slide to target
+                                audioEngine.playDrum(baseEngine, baseParams, baseFX, velocity);
                                 
-                                Object.keys(baseParams).forEach(key => {
-                                    const current = baseParams[key];
-                                    const target = targetParams[key] !== undefined ? targetParams[key] : current;
-                                    blendedParams[key] = lerp(current, target, t);
-                                });
-                                
-                                Object.keys(baseFX).forEach(key => {
-                                    const current = baseFX[key];
-                                    const target = targetFX[key] !== undefined ? targetFX[key] : current;
-                                    blendedFX[key] = lerp(current, target, t);
-                                });
-                                
-                                finalEngine = baseEngine; // Keep base engine
-                                finalParams = blendedParams;
-                                finalFX = blendedFX;
+                                // Start a slide that will morph toward the target
+                                audioEngine.playSlide(trackId, baseEngine, baseParams, targetParams, baseFX, targetFX, slideDuration, velocity * 0.3);
                             } else {
-                                // No next step found, just use base
-                                finalEngine = baseEngine;
-                                finalParams = baseParams;
-                                finalFX = baseFX;
+                                // No next step found, just play the sound normally
+                                audioEngine.playDrum(baseEngine, baseParams, baseFX, velocity);
                             }
                         } else {
-                            // No slide - just use base sound directly
-                            finalEngine = baseEngine;
-                            finalParams = baseParams;
-                            finalFX = baseFX;
+                            // No slide - just play the sound directly
+                            audioEngine.playDrum(baseEngine, baseParams, baseFX, velocity);
                         }
-                        
-                        audioEngine.playDrum(finalEngine, finalParams, finalFX);
                     }
                 });
                 
@@ -2271,6 +2430,12 @@
                 clearInterval(sequencerInterval);
                 sequencerInterval = null;
             }
+            
+            // Stop all active slides
+            Object.keys(state.tracks).forEach(trackId => {
+                audioEngine.stopSlide(trackId);
+            });
+            
             document.querySelectorAll('.step').forEach(step => {
                 step.classList.remove('playing');
             });
@@ -2339,6 +2504,10 @@
         function randomizePattern(trackId) {
             const density = 0.25 + Math.random() * 0.3;
             state.tracks[trackId].steps = Array(16).fill(false).map(() => Math.random() < density);
+            
+            // Randomize velocities too
+            state.tracks[trackId].velocities = Array(16).fill(0).map(() => 0.4 + Math.random() * 0.6);
+            
             renderTracks();
         }
 
@@ -2467,13 +2636,13 @@
         function testSound() {
             const track = state.tracks[state.selectedTrack];
             // Play current working state (what you're editing)
-            audioEngine.playDrum(track.engine, track.params, track.fx);
+            audioEngine.playDrum(track.engine, track.params, track.fx, 0.8);
         }
 
         function triggerSound() {
             const track = state.tracks[state.selectedTrack];
             // Play current working state (what you're editing)
-            audioEngine.playDrum(track.engine, track.params, track.fx);
+            audioEngine.playDrum(track.engine, track.params, track.fx, 0.8);
             
             // Visual feedback
             const btn = document.getElementById('trigger-btn');
