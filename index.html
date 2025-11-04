@@ -1260,13 +1260,13 @@
             'FM2': {
                 name: 'Abstract FM',
                 params: {
-                    pitch: { label: 'Pitch', min: 40, max: 2000, step: 1, default: 300 },
-                    cRatio: { label: 'C:M Ratio', min: 0.125, max: 16, step: 0.125, default: 1 },
-                    modIndex: { label: 'Mod Index', min: 0, max: 20, step: 0.1, default: 5 },
-                    indexDecay: { label: 'Index Env', min: 0.01, max: 1, step: 0.01, default: 0.2 },
-                    feedback: { label: 'Feedback', min: 0, max: 0.95, step: 0.01, default: 0 },
-                    decay: { label: 'Amp Decay', min: 0.01, max: 2, step: 0.01, default: 0.3 },
-                    chaos: { label: 'Chaos', min: 0, max: 1, step: 0.01, default: 0 },
+                    pitch: { label: 'Pitch', min: 40, max: 2000, step: 1, default: 200 },
+                    cRatio: { label: 'C:M Ratio', min: 0.125, max: 16, step: 0.125, default: 2 },
+                    modIndex: { label: 'Mod Index', min: 0, max: 20, step: 0.1, default: 8 },
+                    indexDecay: { label: 'Index Env', min: 0.01, max: 1, step: 0.01, default: 0.15 },
+                    feedback: { label: 'Feedback', min: 0, max: 0.95, step: 0.01, default: 0.3 },
+                    decay: { label: 'Amp Decay', min: 0.01, max: 2, step: 0.01, default: 0.25 },
+                    chaos: { label: 'Chaos', min: 0, max: 1, step: 0.01, default: 0.2 },
                     attack: { label: 'Attack', min: 0, max: 0.1, step: 0.001, default: 0.001 }
                 }
             },
@@ -1274,13 +1274,13 @@
                 name: 'Karplus-Strong',
                 params: {
                     pitch: { label: 'Pitch', min: 40, max: 800, step: 1, default: 110 },
-                    decay: { label: 'Decay', min: 0.1, max: 5, step: 0.01, default: 1.5 },
-                    brightness: { label: 'Brightness', min: 0.1, max: 1, step: 0.01, default: 0.5 },
-                    damping: { label: 'Damping', min: 0, max: 0.99, step: 0.01, default: 0.5 },
+                    decay: { label: 'Decay', min: 0.1, max: 5, step: 0.01, default: 0.8 },
+                    brightness: { label: 'Brightness', min: 0.1, max: 1, step: 0.01, default: 0.6 },
+                    damping: { label: 'Damping', min: 0, max: 0.99, step: 0.01, default: 0.7 },
                     stretch: { label: 'Stretch', min: 0.95, max: 1.05, step: 0.001, default: 1 },
-                    exciter: { label: 'Exciter', min: 0, max: 1, step: 0.01, default: 0.5 },
-                    pickPos: { label: 'Pick Pos', min: 0.1, max: 0.9, step: 0.01, default: 0.5 },
-                    noise: { label: 'Noise', min: 0, max: 1, step: 0.01, default: 0.3 }
+                    exciter: { label: 'Exciter', min: 0, max: 1, step: 0.01, default: 0.3 },
+                    pickPos: { label: 'Pick Pos', min: 0.1, max: 0.9, step: 0.01, default: 0.4 },
+                    noise: { label: 'Noise', min: 0, max: 1, step: 0.01, default: 0.2 }
                 }
             },
             'Buchla': {
@@ -2052,63 +2052,107 @@
                 const carrier = this.audioContext.createOscillator();
                 const modulator = this.audioContext.createOscillator();
                 const modGain = this.audioContext.createGain();
-                const feedbackDelay = this.audioContext.createDelay(0.1);
-                const feedbackGain = this.audioContext.createGain();
                 const gain = this.audioContext.createGain();
                 const output = this.audioContext.createGain();
                 
                 const oscillators = [carrier, modulator];
-                const nodes = [modGain, feedbackDelay, feedbackGain, gain, output];
+                const nodes = [modGain, gain, output];
                 
                 carrier.frequency.value = pitch;
                 modulator.frequency.value = pitch / cRatio;
                 
-                // Modulation index envelope
+                // Modulation index envelope - make it more dramatic
                 const modulationAmount = modIndex * pitch / cRatio;
                 modGain.gain.setValueAtTime(modulationAmount, now);
                 if (modulationAmount > 0) {
-                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, modulationAmount * 0.05), now + indexDecay);
+                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, modulationAmount * 0.01), now + indexDecay);
                 }
                 
-                // Feedback routing with chaos
+                // Feedback routing - make it more aggressive and audible
                 if (feedback > 0) {
-                    feedbackDelay.delayTime.value = 0.001;
-                    feedbackGain.gain.value = feedback * (1 + chaos * 0.5);
+                    const feedbackDelay = this.audioContext.createDelay(0.01);
+                    const feedbackGain = this.audioContext.createGain();
+                    const feedbackShaper = this.audioContext.createWaveShaper();
                     
+                    // Create waveshaper curve for feedback distortion
+                    const fbCurve = new Float32Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const x = (i - 128) / 128;
+                        fbCurve[i] = Math.tanh(x * (1 + feedback * 3)) * 0.8;
+                    }
+                    feedbackShaper.curve = fbCurve;
+                    
+                    feedbackDelay.delayTime.value = 1 / (pitch * 2);
+                    feedbackGain.gain.value = feedback * 800; // Much more aggressive
+                    
+                    // Route feedback through shaper for harmonics
                     carrier.connect(feedbackDelay);
-                    feedbackDelay.connect(feedbackGain);
+                    feedbackDelay.connect(feedbackShaper);
+                    feedbackShaper.connect(feedbackGain);
                     feedbackGain.connect(modulator.frequency);
+                    
+                    // Decay the feedback over time
+                    feedbackGain.gain.setValueAtTime(feedback * 800, now);
+                    feedbackGain.gain.exponentialRampToValueAtTime(Math.max(1, feedback * 100), now + decay * 0.5);
+                    
+                    nodes.push(feedbackDelay, feedbackGain, feedbackShaper);
                 }
                 
-                // Add chaos (random frequency modulation)
+                // Add chaos (random frequency modulation) - make it more obvious
                 if (chaos > 0) {
-                    const chaosFreq = Math.random() * 20 + 5;
-                    const chaosAmount = chaos * pitch * 0.5;
+                    // Multiple LFOs for complex chaos
+                    const numChaos = 3;
+                    for (let i = 0; i < numChaos; i++) {
+                        const chaosLFO = this.audioContext.createOscillator();
+                        const chaosGain = this.audioContext.createGain();
+                        
+                        // Random frequencies for each chaos LFO
+                        chaosLFO.frequency.value = Math.random() * 40 + 10;
+                        chaosLFO.type = i % 2 === 0 ? 'sine' : 'square';
+                        
+                        // Chaos amount - much more dramatic
+                        const chaosAmt = chaos * pitch * (0.5 + Math.random() * 0.5);
+                        chaosGain.gain.value = chaosAmt;
+                        
+                        // Decay chaos over time
+                        chaosGain.gain.setValueAtTime(chaosAmt, now);
+                        chaosGain.gain.exponentialRampToValueAtTime(0.1, now + decay * 0.7);
+                        
+                        // Route to both carrier and modulator for maximum chaos
+                        chaosLFO.connect(chaosGain);
+                        if (i % 2 === 0) {
+                            chaosGain.connect(carrier.frequency);
+                        } else {
+                            chaosGain.connect(modulator.frequency);
+                        }
+                        
+                        chaosLFO.start(now);
+                        chaosLFO.stop(now + decay + 0.1);
+                        
+                        oscillators.push(chaosLFO);
+                        nodes.push(chaosGain);
+                    }
                     
-                    const chaosLFO = this.audioContext.createOscillator();
-                    const chaosGain = this.audioContext.createGain();
-                    chaosLFO.frequency.value = chaosFreq;
-                    chaosGain.gain.value = chaosAmount;
+                    // Add sample & hold style chaos
+                    const chaosRate = 0.01 + chaos * 0.05;
+                    const chaosSteps = Math.floor(decay / chaosRate);
                     
-                    chaosGain.gain.setValueAtTime(chaosAmount, now);
-                    chaosGain.gain.exponentialRampToValueAtTime(0.01, now + decay * 0.5);
-                    
-                    chaosLFO.connect(chaosGain);
-                    chaosGain.connect(carrier.frequency);
-                    chaosLFO.start(now);
-                    chaosLFO.stop(now + decay + 0.1);
-                    
-                    oscillators.push(chaosLFO);
-                    nodes.push(chaosGain);
+                    for (let i = 0; i < chaosSteps && i < 50; i++) {
+                        const stepTime = now + i * chaosRate;
+                        const randomFreq = pitch * (0.8 + Math.random() * 0.4);
+                        carrier.frequency.setValueAtTime(randomFreq, stepTime);
+                    }
                 }
                 
+                // Connect main FM path
                 modulator.connect(modGain);
                 modGain.connect(carrier.frequency);
                 carrier.connect(gain);
                 gain.connect(output);
                 
+                // Amplitude envelope - more punch
                 gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.7, now + attack);
+                gain.gain.linearRampToValueAtTime(0.8, now + attack);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
                 
                 carrier.start(now);
@@ -2125,16 +2169,24 @@
                 const { pitch = 110, decay = 1.5, brightness = 0.5, damping = 0.5,
                         stretch = 1, exciter = 0.5, pickPos = 0.5, noise = 0.3 } = params;
                 
-                // Create excitation signal
-                const bufferSize = Math.ceil(this.audioContext.sampleRate / pitch) * 4;
+                // Create excitation signal - shorter, more impulsive
+                const exciteDuration = 0.005;
+                const bufferSize = Math.ceil(this.audioContext.sampleRate * exciteDuration);
                 const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
                 const bufferData = buffer.getChannelData(0);
                 
-                // Mix of noise and impulse based on exciter parameter
+                // Create excitation: mix of impulse and filtered noise
                 for (let i = 0; i < bufferSize; i++) {
-                    const noiseVal = (Math.random() * 2 - 1) * noise;
-                    const impulseVal = (i < 10 ? 1 - i / 10 : 0) * (1 - noise);
-                    bufferData[i] = noiseVal + impulseVal;
+                    const t = i / bufferSize;
+                    const envelope = Math.exp(-t * 20); // Sharp decay
+                    
+                    // Impulse component (bright attack)
+                    const impulseVal = envelope * (1 - exciter);
+                    
+                    // Noise component (natural string texture)
+                    const noiseVal = (Math.random() * 2 - 1) * envelope * exciter;
+                    
+                    bufferData[i] = (impulseVal + noiseVal) * 2;
                 }
                 
                 const excitation = this.audioContext.createBufferSource();
@@ -2145,40 +2197,93 @@
                 const delayLine = this.audioContext.createDelay(1);
                 delayLine.delayTime.value = delayTime;
                 
-                // Lowpass filter for damping
+                // Lowpass filter for damping (this creates the natural decay)
                 const dampFilter = this.audioContext.createBiquadFilter();
                 dampFilter.type = 'lowpass';
-                dampFilter.frequency.value = Math.min(20000, pitch * 8 * brightness);
-                dampFilter.Q.value = 0.5;
+                dampFilter.frequency.value = Math.min(20000, pitch * (4 + brightness * 8));
+                dampFilter.Q.value = 0.7;
                 
-                // Feedback control
+                // Feedback control - this sustains the sound
                 const feedbackGain = this.audioContext.createGain();
-                feedbackGain.gain.setValueAtTime(damping, now);
-                feedbackGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                const initialFeedback = Math.min(0.995, 0.8 + damping * 0.195);
+                feedbackGain.gain.setValueAtTime(initialFeedback, now);
+                feedbackGain.gain.linearRampToValueAtTime(0.3, now + decay * 0.8);
+                feedbackGain.gain.linearRampToValueAtTime(0, now + decay);
                 
-                // Pick position filter
-                const pickFilter = this.audioContext.createBiquadFilter();
-                pickFilter.type = 'bandpass';
-                pickFilter.frequency.value = pitch * (1 / pickPos);
-                pickFilter.Q.value = 2;
+                // Input mixer for excitation
+                const inputMixer = this.audioContext.createGain();
+                inputMixer.gain.value = 1;
                 
+                // Pick position simulation (comb filtering effect)
+                const pickDelay = this.audioContext.createDelay(0.1);
+                pickDelay.delayTime.value = (1 / pitch) * pickPos * 0.5;
+                
+                const pickMix = this.audioContext.createGain();
+                pickMix.gain.value = 0.3;
+                
+                // Output gain with decay envelope
                 const outputGain = this.audioContext.createGain();
-                outputGain.gain.setValueAtTime(0.8, now);
-                outputGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
+                outputGain.gain.setValueAtTime(0.6, now);
+                outputGain.gain.linearRampToValueAtTime(0.6, now + decay * 0.7);
+                outputGain.gain.linearRampToValueAtTime(0, now + decay);
                 
-                // Connect the Karplus-Strong loop
-                excitation.connect(pickFilter);
-                pickFilter.connect(delayLine);
+                // Additional brightness control
+                const brightnessFilter = this.audioContext.createBiquadFilter();
+                brightnessFilter.type = 'highshelf';
+                brightnessFilter.frequency.value = pitch * 2;
+                brightnessFilter.gain.value = (brightness - 0.5) * 6;
+                
+                // Noise content control
+                const noiseMix = this.audioContext.createGain();
+                noiseMix.gain.value = noise * 0.3;
+                
+                if (noise > 0.1) {
+                    const noiseBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * decay, this.audioContext.sampleRate);
+                    const noiseData = noiseBuffer.getChannelData(0);
+                    for (let i = 0; i < noiseData.length; i++) {
+                        noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.audioContext.sampleRate * decay * 0.3));
+                    }
+                    
+                    const noiseSource = this.audioContext.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+                    
+                    const noiseFilter = this.audioContext.createBiquadFilter();
+                    noiseFilter.type = 'bandpass';
+                    noiseFilter.frequency.value = pitch * 2;
+                    noiseFilter.Q.value = 3;
+                    
+                    noiseSource.connect(noiseFilter);
+                    noiseFilter.connect(noiseMix);
+                    noiseMix.connect(outputGain);
+                    
+                    noiseSource.start(now);
+                    noiseSource.stop(now + decay);
+                }
+                
+                // Connect the Karplus-Strong feedback loop
+                excitation.connect(inputMixer);
+                
+                // Pick position effect
+                inputMixer.connect(pickDelay);
+                pickDelay.connect(pickMix);
+                pickMix.connect(inputMixer);
+                
+                // Main delay line with feedback
+                inputMixer.connect(delayLine);
                 delayLine.connect(dampFilter);
                 dampFilter.connect(feedbackGain);
-                feedbackGain.connect(delayLine);
-                dampFilter.connect(outputGain);
+                feedbackGain.connect(delayLine); // Feedback loop
+                
+                // Output path
+                dampFilter.connect(brightnessFilter);
+                brightnessFilter.connect(outputGain);
                 
                 const sources = [excitation];
-                const nodes = [delayLine, dampFilter, feedbackGain, pickFilter, outputGain];
+                const nodes = [delayLine, dampFilter, feedbackGain, inputMixer, pickDelay, 
+                              pickMix, outputGain, brightnessFilter, noiseMix];
                 
                 excitation.start(now);
-                excitation.stop(now + 0.01);
+                excitation.stop(now + exciteDuration);
                 
                 return { output: outputGain, sources, nodes, stopTime: now + decay + 0.1 };
             }
@@ -2618,13 +2723,11 @@
                 const carrier = this.audioContext.createOscillator();
                 const modulator = this.audioContext.createOscillator();
                 const modGain = this.audioContext.createGain();
-                const feedbackDelay = this.audioContext.createDelay(0.1);
-                const feedbackGain = this.audioContext.createGain();
                 const gain = this.audioContext.createGain();
                 const output = this.audioContext.createGain();
                 
                 const oscillators = [carrier, modulator];
-                const nodes = [modGain, feedbackDelay, feedbackGain, gain, output];
+                const nodes = [modGain, gain, output];
                 
                 const targetPitch = targetParams.pitch !== undefined ? targetParams.pitch : pitch;
                 const targetCRatio = targetParams.cRatio !== undefined ? targetParams.cRatio : cRatio;
@@ -2642,37 +2745,72 @@
                 const modulationAmount = modIndex * pitch / cRatio;
                 modGain.gain.setValueAtTime(modulationAmount, now);
                 if (modulationAmount > 0) {
-                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, modulationAmount * 0.05), now + indexDecay);
+                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, modulationAmount * 0.01), now + indexDecay);
                 }
                 
                 if (feedback > 0) {
-                    feedbackDelay.delayTime.value = 0.001;
-                    feedbackGain.gain.value = feedback * (1 + chaos * 0.5);
+                    const feedbackDelay = this.audioContext.createDelay(0.01);
+                    const feedbackGain = this.audioContext.createGain();
+                    const feedbackShaper = this.audioContext.createWaveShaper();
+                    
+                    const fbCurve = new Float32Array(256);
+                    for (let i = 0; i < 256; i++) {
+                        const x = (i - 128) / 128;
+                        fbCurve[i] = Math.tanh(x * (1 + feedback * 3)) * 0.8;
+                    }
+                    feedbackShaper.curve = fbCurve;
+                    
+                    feedbackDelay.delayTime.value = 1 / (pitch * 2);
+                    feedbackGain.gain.value = feedback * 800;
                     
                     carrier.connect(feedbackDelay);
-                    feedbackDelay.connect(feedbackGain);
+                    feedbackDelay.connect(feedbackShaper);
+                    feedbackShaper.connect(feedbackGain);
                     feedbackGain.connect(modulator.frequency);
+                    
+                    feedbackGain.gain.setValueAtTime(feedback * 800, now);
+                    feedbackGain.gain.exponentialRampToValueAtTime(Math.max(1, feedback * 100), now + decay * 0.5);
+                    
+                    nodes.push(feedbackDelay, feedbackGain, feedbackShaper);
                 }
                 
                 if (chaos > 0) {
-                    const chaosFreq = Math.random() * 20 + 5;
-                    const chaosAmount = chaos * pitch * 0.5;
+                    const numChaos = 3;
+                    for (let i = 0; i < numChaos; i++) {
+                        const chaosLFO = this.audioContext.createOscillator();
+                        const chaosGain = this.audioContext.createGain();
+                        
+                        chaosLFO.frequency.value = Math.random() * 40 + 10;
+                        chaosLFO.type = i % 2 === 0 ? 'sine' : 'square';
+                        
+                        const chaosAmt = chaos * pitch * (0.5 + Math.random() * 0.5);
+                        chaosGain.gain.value = chaosAmt;
+                        
+                        chaosGain.gain.setValueAtTime(chaosAmt, now);
+                        chaosGain.gain.exponentialRampToValueAtTime(0.1, now + decay * 0.7);
+                        
+                        chaosLFO.connect(chaosGain);
+                        if (i % 2 === 0) {
+                            chaosGain.connect(carrier.frequency);
+                        } else {
+                            chaosGain.connect(modulator.frequency);
+                        }
+                        
+                        chaosLFO.start(now);
+                        chaosLFO.stop(now + decay + 0.1);
+                        
+                        oscillators.push(chaosLFO);
+                        nodes.push(chaosGain);
+                    }
                     
-                    const chaosLFO = this.audioContext.createOscillator();
-                    const chaosGain = this.audioContext.createGain();
-                    chaosLFO.frequency.value = chaosFreq;
-                    chaosGain.gain.value = chaosAmount;
+                    const chaosRate = 0.01 + chaos * 0.05;
+                    const chaosSteps = Math.floor(decay / chaosRate);
                     
-                    chaosGain.gain.setValueAtTime(chaosAmount, now);
-                    chaosGain.gain.exponentialRampToValueAtTime(0.01, now + decay * 0.5);
-                    
-                    chaosLFO.connect(chaosGain);
-                    chaosGain.connect(carrier.frequency);
-                    chaosLFO.start(now);
-                    chaosLFO.stop(now + decay + 0.1);
-                    
-                    oscillators.push(chaosLFO);
-                    nodes.push(chaosGain);
+                    for (let i = 0; i < chaosSteps && i < 50; i++) {
+                        const stepTime = now + i * chaosRate;
+                        const randomFreq = pitch * (0.8 + Math.random() * 0.4);
+                        carrier.frequency.setValueAtTime(randomFreq, stepTime);
+                    }
                 }
                 
                 modulator.connect(modGain);
@@ -2681,7 +2819,7 @@
                 gain.connect(output);
                 
                 gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.7, now + attack);
+                gain.gain.linearRampToValueAtTime(0.8, now + attack);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
                 
                 carrier.start(now);
@@ -2694,6 +2832,7 @@
             }
 
             createKSDrumWithAutomation(startParams, targetParams, duration) {
+                // KS doesn't support meaningful pitch slides, so just use the start params
                 return this.createKSDrum(startParams);
             }
 
