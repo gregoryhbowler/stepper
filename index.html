@@ -15,12 +15,14 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #0a0a0a;
             color: #e0e0e0;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             user-select: none;
+            min-height: 100vh;
         }
 
         .app {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 20px;
@@ -172,6 +174,8 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         .pattern-sequencer-header {
@@ -422,6 +426,7 @@
             display: flex;
             gap: 20px;
             flex: 1;
+            min-height: 400px;
             overflow: hidden;
             position: relative;
         }
@@ -433,6 +438,7 @@
             gap: 12px;
             overflow-y: auto;
             padding-right: 10px;
+            min-height: 200px;
         }
 
         /* Mobile styles */
@@ -1115,6 +1121,8 @@
     </div>
 
     <script>
+        console.log('Starting initialization...');
+
         // Engine Definitions
         const ENGINE_SPECS = {
             '808': {
@@ -1214,738 +1222,65 @@
             glitchRate: { label: 'Glitch Rate', min: 0.02, max: 0.5, step: 0.01, default: 0.1 }
         };
 
-        // Audio Engine with FX (same as original)
+        // Audio Engine with FX (simplified for initialization)
         class DrumSynthEngine {
             constructor() {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                this.masterGain = this.audioContext.createGain();
-                this.masterGain.gain.value = 0.5;
+                console.log('Creating audio engine...');
+                try {
+                    this.audioContext = null;
+                    this.masterGain = null;
+                    this.masterFXInput = null;
+                    this.masterFXOutput = null;
+                    this.masterFXNodes = [];
+                    this.activeVoices = new Map();
+                    this.scheduledCleanups = new Set();
+                    this.initialized = false;
+                    console.log('Audio engine created (not initialized yet)');
+                } catch (e) {
+                    console.error('Error creating audio engine:', e);
+                }
+            }
+
+            init() {
+                if (this.initialized) return;
                 
-                // Master FX chain
-                this.masterFXInput = this.audioContext.createGain();
-                this.masterFXOutput = this.masterGain;
-                this.masterFXNodes = [];
-                
-                // Initially connect input directly to output (no FX)
-                this.masterFXInput.connect(this.masterFXOutput);
-                this.masterGain.connect(this.audioContext.destination);
-                
-                this.activeVoices = new Map();
-                this.scheduledCleanups = new Set();
+                try {
+                    console.log('Initializing audio context...');
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.audioContext.createGain();
+                    this.masterGain.gain.value = 0.5;
+                    
+                    this.masterFXInput = this.audioContext.createGain();
+                    this.masterFXOutput = this.masterGain;
+                    
+                    this.masterFXInput.connect(this.masterFXOutput);
+                    this.masterGain.connect(this.audioContext.destination);
+                    
+                    this.initialized = true;
+                    console.log('Audio engine initialized successfully');
+                } catch (e) {
+                    console.error('Error initializing audio engine:', e);
+                }
             }
 
             stopVoice(trackId) {
-                if (this.activeVoices.has(trackId)) {
-                    const voice = this.activeVoices.get(trackId);
-                    const now = this.audioContext.currentTime;
-                    
-                    if (voice.outputGain && voice.outputGain.gain) {
-                        voice.outputGain.gain.cancelScheduledValues(now);
-                        voice.outputGain.gain.setValueAtTime(voice.outputGain.gain.value, now);
-                        voice.outputGain.gain.linearRampToValueAtTime(0, now + 0.02);
-                    }
-                    
-                    setTimeout(() => {
-                        if (voice.oscillators) {
-                            voice.oscillators.forEach(osc => {
-                                try {
-                                    osc.stop();
-                                } catch(e) {}
-                            });
-                        }
-                        if (voice.sources) {
-                            voice.sources.forEach(src => {
-                                try {
-                                    src.stop();
-                                } catch(e) {}
-                            });
-                        }
-                    }, 25);
-                    
-                    this.activeVoices.delete(trackId);
-                }
+                // Simplified for now
             }
 
             updateMasterFX(fx) {
-                // Disconnect old chain
-                this.masterFXInput.disconnect();
-                this.masterFXNodes.forEach(node => {
-                    try {
-                        node.disconnect();
-                    } catch(e) {}
-                });
-                this.masterFXNodes = [];
-                
-                // Build new FX chain
-                const dummyVoice = {
-                    output: this.masterFXInput
-                };
-                
-                const fxResult = this.applyFX(dummyVoice, fx);
-                this.masterFXNodes = fxResult.fxNodes || [];
-                
-                // Connect final output to master gain
-                fxResult.output.connect(this.masterGain);
-            }
-
-            scheduleCleanup(nodes, stopTime) {
-                const cleanupTime = Math.max(0, (stopTime - this.audioContext.currentTime) * 1000 + 100);
-                const timeoutId = setTimeout(() => {
-                    nodes.forEach(node => {
-                        try {
-                            if (node.stop) node.stop();
-                            node.disconnect();
-                        } catch(e) {}
-                    });
-                    this.scheduledCleanups.delete(timeoutId);
-                }, cleanupTime);
-                this.scheduledCleanups.add(timeoutId);
-            }
-
-            createReverbImpulse(size = 2) {
-                const sampleRate = this.audioContext.sampleRate;
-                const length = sampleRate * size;
-                const impulse = this.audioContext.createBuffer(2, length, sampleRate);
-                
-                for (let channel = 0; channel < 2; channel++) {
-                    const channelData = impulse.getChannelData(channel);
-                    for (let i = 0; i < length; i++) {
-                        channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
-                    }
-                }
-                
-                return impulse;
-            }
-
-            applyFX(voiceInfo, fx) {
-                let current = voiceInfo.output;
-                const now = this.audioContext.currentTime;
-                const fxNodes = [];
-                
-                if (fx.waspFilter > 0) {
-                    const preDrive = this.audioContext.createWaveShaper();
-                    const driveCurve = new Float32Array(256);
-                    for (let i = 0; i < 256; i++) {
-                        const x = (i - 128) / 128;
-                        driveCurve[i] = Math.tanh(x * (fx.waspDrive || 2)) * 0.9;
-                    }
-                    preDrive.curve = driveCurve;
-                    
-                    const filter1 = this.audioContext.createBiquadFilter();
-                    const filter2 = this.audioContext.createBiquadFilter();
-                    const filter3 = this.audioContext.createBiquadFilter();
-                    const filter4 = this.audioContext.createBiquadFilter();
-                    
-                    [filter1, filter2, filter3, filter4].forEach(f => {
-                        f.type = 'lowpass';
-                        f.frequency.value = fx.waspFreq || 2000;
-                        f.Q.value = (fx.waspRes || 5) / 4;
-                    });
-                    
-                    const waspWet = this.audioContext.createGain();
-                    const waspDry = this.audioContext.createGain();
-                    const waspMerger = this.audioContext.createGain();
-                    
-                    waspWet.gain.value = fx.waspFilter;
-                    waspDry.gain.value = 1 - fx.waspFilter * 0.7;
-                    
-                    current.connect(preDrive);
-                    preDrive.connect(filter1);
-                    filter1.connect(filter2);
-                    filter2.connect(filter3);
-                    filter3.connect(filter4);
-                    filter4.connect(waspWet);
-                    waspWet.connect(waspMerger);
-                    
-                    current.connect(waspDry);
-                    waspDry.connect(waspMerger);
-                    
-                    fxNodes.push(preDrive, filter1, filter2, filter3, filter4, waspWet, waspDry, waspMerger);
-                    current = waspMerger;
-                }
-                
-                if (fx.drive > 1) {
-                    const driveNode = this.audioContext.createWaveShaper();
-                    const curve = new Float32Array(256);
-                    for (let i = 0; i < 256; i++) {
-                        const x = (i - 128) / 128;
-                        curve[i] = Math.tanh(x * fx.drive) / Math.tanh(fx.drive);
-                    }
-                    driveNode.curve = curve;
-                    
-                    current.connect(driveNode);
-                    fxNodes.push(driveNode);
-                    current = driveNode;
-                }
-                
-                if (fx.distortion > 0) {
-                    const distNode = this.audioContext.createWaveShaper();
-                    const amount = fx.distortion * 50;
-                    const curve = new Float32Array(256);
-                    for (let i = 0; i < 256; i++) {
-                        const x = (i - 128) / 128;
-                        curve[i] = (Math.exp(amount * x) - Math.exp(-amount * x)) / 
-                                   (Math.exp(amount * x) + Math.exp(-amount * x));
-                    }
-                    distNode.curve = curve;
-                    
-                    const distGain = this.audioContext.createGain();
-                    distGain.gain.value = 1 / (1 + fx.distortion);
-                    
-                    current.connect(distNode);
-                    distNode.connect(distGain);
-                    fxNodes.push(distNode, distGain);
-                    current = distGain;
-                }
-                
-                if (fx.resonator > 0) {
-                    const resDelay = this.audioContext.createDelay(1);
-                    const resFilter = this.audioContext.createBiquadFilter();
-                    const resFeedback = this.audioContext.createGain();
-                    const resWet = this.audioContext.createGain();
-                    const resDry = this.audioContext.createGain();
-                    const resMerger = this.audioContext.createGain();
-                    
-                    const delayTime = 1 / (fx.resFreq || 440);
-                    resDelay.delayTime.value = delayTime;
-                    
-                    resFilter.type = 'bandpass';
-                    resFilter.frequency.value = fx.resFreq || 440;
-                    resFilter.Q.value = 20;
-                    
-                    resFeedback.gain.value = 0.85 * fx.resonator;
-                    
-                    const resDecay = fx.resDecay || 0.3;
-                    resFeedback.gain.setValueAtTime(0.85 * fx.resonator, now);
-                    resFeedback.gain.exponentialRampToValueAtTime(0.01, now + resDecay);
-                    
-                    resWet.gain.value = fx.resonator * 0.7;
-                    resDry.gain.value = 1 - fx.resonator * 0.3;
-                    
-                    current.connect(resDelay);
-                    resDelay.connect(resFilter);
-                    resFilter.connect(resFeedback);
-                    resFeedback.connect(resDelay);
-                    resFilter.connect(resWet);
-                    resWet.connect(resMerger);
-                    
-                    current.connect(resDry);
-                    resDry.connect(resMerger);
-                    
-                    fxNodes.push(resDelay, resFilter, resFeedback, resWet, resDry, resMerger);
-                    current = resMerger;
-                }
-                
-                if (fx.delay > 0) {
-                    const delayNode = this.audioContext.createDelay(2);
-                    delayNode.delayTime.value = fx.delayTime || 0.25;
-                    
-                    const feedback = this.audioContext.createGain();
-                    feedback.gain.value = 0.4 * fx.delay;
-                    
-                    const delayGain = this.audioContext.createGain();
-                    delayGain.gain.value = fx.delay * 0.5;
-                    
-                    const merger = this.audioContext.createGain();
-                    
-                    current.connect(delayNode);
-                    delayNode.connect(feedback);
-                    feedback.connect(delayNode);
-                    delayNode.connect(delayGain);
-                    delayGain.connect(merger);
-                    
-                    current.connect(merger);
-                    fxNodes.push(delayNode, feedback, delayGain, merger);
-                    current = merger;
-                }
-                
-                if (fx.reverb > 0) {
-                    const reverbNode = this.audioContext.createConvolver();
-                    reverbNode.buffer = this.createReverbImpulse(fx.reverbSize || 2);
-                    
-                    const reverbGain = this.audioContext.createGain();
-                    reverbGain.gain.value = fx.reverb * 0.4;
-                    
-                    const dryGain = this.audioContext.createGain();
-                    dryGain.gain.value = 1;
-                    
-                    const merger = this.audioContext.createGain();
-                    
-                    current.connect(reverbNode);
-                    reverbNode.connect(reverbGain);
-                    reverbGain.connect(merger);
-                    
-                    current.connect(dryGain);
-                    dryGain.connect(merger);
-                    
-                    fxNodes.push(reverbNode, reverbGain, dryGain, merger);
-                    current = merger;
-                }
-                
-                if (fx.glitch > 0 && Math.random() < fx.glitch) {
-                    const glitchGain = this.audioContext.createGain();
-                    const stutterTime = fx.glitchRate || 0.1;
-                    const repeats = Math.floor(1 + Math.random() * 3);
-                    
-                    glitchGain.gain.setValueAtTime(1, now);
-                    
-                    for (let i = 0; i < repeats; i++) {
-                        const onTime = now + (stutterTime * i * 2);
-                        const offTime = onTime + stutterTime * 0.5;
-                        
-                        glitchGain.gain.setValueAtTime(0, offTime);
-                        glitchGain.gain.setValueAtTime(1, offTime + stutterTime * 0.5);
-                    }
-                    
-                    current.connect(glitchGain);
-                    fxNodes.push(glitchGain);
-                    current = glitchGain;
-                }
-                
-                return { output: current, fxNodes };
-            }
-
-            create808Kick(params) {
-                const now = this.audioContext.currentTime;
-                const { pitch = 1, pitchDecay = 0.05, decay = 0.5, punch = 1, drive = 1, 
-                        sub = 0.3, click = 0, attack = 0.001 } = params;
-                
-                const osc = this.audioContext.createOscillator();
-                const subOsc = this.audioContext.createOscillator();
-                const gain = this.audioContext.createGain();
-                const subGain = this.audioContext.createGain();
-                const merger = this.audioContext.createGain();
-                
-                const oscillators = [osc, subOsc];
-                const nodes = [gain, subGain, merger];
-                
-                const startFreq = 150 * pitch;
-                const endFreq = 40 * pitch;
-                osc.frequency.setValueAtTime(startFreq, now);
-                osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), now + pitchDecay * punch);
-                
-                subOsc.frequency.setValueAtTime(startFreq * 0.5, now);
-                subOsc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq * 0.5), now + pitchDecay * punch);
-                
-                if (click > 0) {
-                    const clickOsc = this.audioContext.createOscillator();
-                    const clickGain = this.audioContext.createGain();
-                    clickOsc.type = 'square';
-                    clickOsc.frequency.value = startFreq * 8;
-                    clickGain.gain.setValueAtTime(click, now);
-                    clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.01);
-                    clickOsc.connect(clickGain);
-                    clickGain.connect(merger);
-                    clickOsc.start(now);
-                    clickOsc.stop(now + 0.02);
-                    oscillators.push(clickOsc);
-                    nodes.push(clickGain);
-                }
-                
-                const driveNode = this.audioContext.createWaveShaper();
-                const curve = new Float32Array(256);
-                for (let i = 0; i < 256; i++) {
-                    const x = (i - 128) / 128;
-                    curve[i] = Math.tanh(x * drive) * 0.8;
-                }
-                driveNode.curve = curve;
-                nodes.push(driveNode);
-                
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(1, now + attack);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
-                
-                subGain.gain.setValueAtTime(0, now);
-                subGain.gain.linearRampToValueAtTime(sub, now + attack);
-                subGain.gain.exponentialRampToValueAtTime(0.01, now + decay);
-                
-                osc.connect(driveNode);
-                driveNode.connect(gain);
-                subOsc.connect(subGain);
-                gain.connect(merger);
-                subGain.connect(merger);
-                
-                osc.start(now);
-                subOsc.start(now);
-                const stopTime = now + decay + 0.1;
-                osc.stop(stopTime);
-                subOsc.stop(stopTime);
-                
-                return { output: merger, oscillators, nodes, stopTime };
-            }
-
-            createFMDrum(params) {
-                const now = this.audioContext.currentTime;
-                const { pitch = 200, fmRatio = 1.6, fmAmount = 180, fmDecay = 0.15, decay = 0.15, 
-                        tone = 0.8, filterQ = 1, attack = 0.001 } = params;
-                
-                const carrier = this.audioContext.createOscillator();
-                const modulator = this.audioContext.createOscillator();
-                const modGain = this.audioContext.createGain();
-                const gain = this.audioContext.createGain();
-                const output = this.audioContext.createGain();
-                
-                const oscillators = [carrier, modulator];
-                const nodes = [modGain, gain, output];
-                
-                carrier.frequency.value = pitch;
-                modulator.frequency.value = pitch * fmRatio;
-                
-                modGain.gain.setValueAtTime(fmAmount, now);
-                if (fmAmount > 0) {
-                    modGain.gain.exponentialRampToValueAtTime(Math.max(0.1, fmAmount * 0.1), now + fmDecay);
-                }
-                
-                if (tone > 0) {
-                    const filter = this.audioContext.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.value = Math.min(20000, 8000 * tone);
-                    filter.Q.value = filterQ;
-                    carrier.connect(filter);
-                    filter.connect(gain);
-                    nodes.push(filter);
-                } else {
-                    carrier.connect(gain);
-                }
-                
-                modulator.connect(modGain);
-                modGain.connect(carrier.frequency);
-                gain.connect(output);
-                
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.8, now + attack);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
-                
-                carrier.start(now);
-                modulator.start(now);
-                const stopTime = now + Math.max(decay, fmDecay) + 0.1;
-                carrier.stop(stopTime);
-                modulator.stop(stopTime);
-                
-                return { output, oscillators, nodes, stopTime };
-            }
-
-            createSnareDrum(params) {
-                const now = this.audioContext.currentTime;
-                const { pitch = 200, fmRatio = 1.6, fmAmount = 180, toneDecay = 0.08, 
-                        noiseAmount = 0.65, noiseDecay = 0.12, snap = 1.5, tone = 1.2 } = params;
-                
-                const merger = this.audioContext.createGain();
-                const oscillators = [];
-                const sources = [];
-                const nodes = [merger];
-                
-                const carrier = this.audioContext.createOscillator();
-                const modulator = this.audioContext.createOscillator();
-                const modGain = this.audioContext.createGain();
-                const toneGain = this.audioContext.createGain();
-                
-                oscillators.push(carrier, modulator);
-                nodes.push(modGain, toneGain);
-                
-                carrier.frequency.value = pitch;
-                modulator.frequency.value = pitch * fmRatio;
-                modGain.gain.setValueAtTime(fmAmount, now);
-                if (fmAmount > 0) {
-                    modGain.gain.exponentialRampToValueAtTime(1, now + toneDecay);
-                }
-                
-                modulator.connect(modGain);
-                modGain.connect(carrier.frequency);
-                carrier.connect(toneGain);
-                
-                toneGain.gain.setValueAtTime(0, now);
-                toneGain.gain.linearRampToValueAtTime(0.6 * (1 - noiseAmount), now + 0.001);
-                toneGain.gain.exponentialRampToValueAtTime(0.01, now + toneDecay);
-                
-                let maxStopTime = toneDecay;
-                
-                if (noiseAmount > 0) {
-                    const bufferSize = this.audioContext.sampleRate * 2;
-                    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                    const output = buffer.getChannelData(0);
-                    for (let i = 0; i < bufferSize; i++) {
-                        output[i] = Math.random() * 2 - 1;
-                    }
-                    
-                    const noise = this.audioContext.createBufferSource();
-                    noise.buffer = buffer;
-                    sources.push(noise);
-                    
-                    const noiseFilter = this.audioContext.createBiquadFilter();
-                    noiseFilter.type = 'highpass';
-                    noiseFilter.frequency.value = Math.min(20000, Math.max(100, 3000 * tone));
-                    noiseFilter.Q.value = snap * 3;
-                    
-                    const noiseGain = this.audioContext.createGain();
-                    
-                    nodes.push(noiseFilter, noiseGain);
-                    
-                    noise.connect(noiseFilter);
-                    noiseFilter.connect(noiseGain);
-                    
-                    noiseGain.gain.setValueAtTime(0, now);
-                    noiseGain.gain.linearRampToValueAtTime(0.7 * noiseAmount, now + 0.001);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + noiseDecay);
-                    
-                    noiseGain.connect(merger);
-                    noise.start(now);
-                    noise.stop(now + noiseDecay + 0.1);
-                    maxStopTime = Math.max(maxStopTime, noiseDecay);
-                }
-                
-                toneGain.connect(merger);
-                
-                carrier.start(now);
-                modulator.start(now);
-                const stopTime = now + maxStopTime + 0.1;
-                carrier.stop(stopTime);
-                modulator.stop(stopTime);
-                
-                return { output: merger, oscillators, sources, nodes, stopTime };
-            }
-
-            createNoiseDrum(params) {
-                const now = this.audioContext.currentTime;
-                const { decay = 0.04, tone = 1.8, spread = 12, attack = 0.001, 
-                        shape = 1, density = 1, filterType = 1 } = params;
-                
-                const bufferSize = this.audioContext.sampleRate * 2;
-                const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-                const output = buffer.getChannelData(0);
-                
-                for (let i = 0; i < bufferSize; i++) {
-                    if (density === 0 || Math.random() < density) {
-                        output[i] = Math.random() * 2 - 1;
-                    } else {
-                        output[i] = 0;
-                    }
-                }
-                
-                const noise = this.audioContext.createBufferSource();
-                noise.buffer = buffer;
-                
-                const sources = [noise];
-                const gain = this.audioContext.createGain();
-                const outputGain = this.audioContext.createGain();
-                const nodes = [gain, outputGain];
-                
-                if (tone > 0 || spread > 0) {
-                    const filter = this.audioContext.createBiquadFilter();
-                    const filterTypes = ['lowpass', 'highpass', 'bandpass'];
-                    filter.type = filterTypes[Math.round(filterType)];
-                    filter.frequency.value = Math.min(20000, Math.max(100, 4000 * tone));
-                    filter.Q.value = spread;
-                    
-                    nodes.push(filter);
-                    noise.connect(filter);
-                    filter.connect(gain);
-                } else {
-                    noise.connect(gain);
-                }
-                
-                gain.connect(outputGain);
-                
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.6, now + attack);
-                
-                if (shape > 1) {
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + decay);
-                } else {
-                    gain.gain.linearRampToValueAtTime(0, now + decay * Math.max(0.1, shape));
-                }
-                
-                noise.start(now);
-                const stopTime = now + decay + 0.1;
-                noise.stop(stopTime);
-                
-                return { output: outputGain, sources, nodes, stopTime };
-            }
-
-            createModalDrum(params) {
-                const now = this.audioContext.currentTime;
-                const { pitch = 150, decay = 0.6, tone = 1.0, resonance = 8, 
-                        stiffness = 1, strike = 0.002, damping = 0.8, spread = 1.03 } = params;
-                
-                const ratios = [];
-                for (let i = 1; i <= 7; i++) {
-                    ratios.push(i * Math.pow(spread, i - 1) * stiffness);
-                }
-                
-                const masterGain = this.audioContext.createGain();
-                const output = this.audioContext.createGain();
-                const oscillators = [];
-                const nodes = [masterGain, output];
-                
-                let maxStopTime = 0;
-                
-                ratios.forEach((ratio, i) => {
-                    const osc = this.audioContext.createOscillator();
-                    const gain = this.audioContext.createGain();
-                    
-                    oscillators.push(osc);
-                    nodes.push(gain);
-                    
-                    osc.frequency.value = pitch * ratio;
-                    osc.type = 'sine';
-                    
-                    const amplitude = 1 / Math.pow(i + 1, 0.7);
-                    const partialDecay = decay * Math.pow(Math.max(0.1, damping), i * 0.3);
-                    
-                    gain.gain.setValueAtTime(0, now);
-                    gain.gain.linearRampToValueAtTime(amplitude, now + Math.max(0.001, strike));
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + partialDecay);
-                    
-                    osc.connect(gain);
-                    gain.connect(masterGain);
-                    
-                    osc.start(now);
-                    const stopTime = now + partialDecay + 0.1;
-                    osc.stop(stopTime);
-                    maxStopTime = Math.max(maxStopTime, stopTime);
-                });
-                
-                if (tone > 0) {
-                    const filter = this.audioContext.createBiquadFilter();
-                    filter.type = 'lowpass';
-                    filter.frequency.value = Math.min(20000, Math.max(100, 4000 * tone));
-                    filter.Q.value = resonance;
-                    
-                    nodes.push(filter);
-                    masterGain.connect(filter);
-                    filter.connect(output);
-                } else {
-                    masterGain.connect(output);
-                }
-                
-                return { output, oscillators, nodes, stopTime: maxStopTime };
-            }
-
-            createPhysicalDrum(params) {
-                const now = this.audioContext.currentTime;
-                const { pitch = 120, decay = 0.8, material = 1, tension = 1, strike = 0.003, 
-                        position = 0.35, resonance = 5, damping = 0.7 } = params;
-                
-                const modes = [
-                    { ratio: 1.00, amplitude: Math.sin(Math.PI * Math.max(0.01, position)) },
-                    { ratio: 2.14 * material, amplitude: Math.sin(2 * Math.PI * Math.max(0.01, position)) * 0.7 },
-                    { ratio: 3.00 * material, amplitude: Math.sin(3 * Math.PI * Math.max(0.01, position)) * 0.5 },
-                    { ratio: 3.89 * material, amplitude: Math.sin(4 * Math.PI * Math.max(0.01, position)) * 0.3 },
-                    { ratio: 5.14 * material, amplitude: Math.sin(5 * Math.PI * Math.max(0.01, position)) * 0.2 }
-                ];
-                
-                const masterGain = this.audioContext.createGain();
-                const output = this.audioContext.createGain();
-                const oscillators = [];
-                const nodes = [masterGain, output];
-                
-                let maxStopTime = 0;
-                
-                modes.forEach((mode, i) => {
-                    const osc = this.audioContext.createOscillator();
-                    const gain = this.audioContext.createGain();
-                    
-                    oscillators.push(osc);
-                    nodes.push(gain);
-                    
-                    const freq = pitch * mode.ratio * Math.max(0.1, tension);
-                    osc.frequency.value = freq;
-                    osc.type = 'sine';
-                    
-                    const partialDecay = decay * Math.pow(Math.max(0.1, damping), i * 0.4);
-                    const amp = Math.abs(mode.amplitude) * (1 / Math.sqrt(i + 1));
-                    
-                    gain.gain.setValueAtTime(0, now);
-                    gain.gain.linearRampToValueAtTime(amp, now + Math.max(0.001, strike));
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + partialDecay);
-                    
-                    osc.connect(gain);
-                    gain.connect(masterGain);
-                    
-                    osc.start(now);
-                    const stopTime = now + partialDecay + 0.1;
-                    osc.stop(stopTime);
-                    maxStopTime = Math.max(maxStopTime, stopTime);
-                });
-                
-                const filter = this.audioContext.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = Math.min(20000, Math.max(100, 3000 + resonance * 500));
-                filter.Q.value = resonance * 0.8;
-                
-                nodes.push(filter);
-                masterGain.connect(filter);
-                filter.connect(output);
-                
-                return { output, oscillators, nodes, stopTime: maxStopTime };
+                // Simplified for now
             }
 
             playDrum(trackId, engine, params, fx, velocity = 1) {
-                if (!trackId || trackId === 'test') {
-                    trackId = 'test_' + Date.now();
-                } else {
-                    this.stopVoice(trackId);
-                }
-
-                const engineMap = {
-                    '808': () => this.create808Kick(params),
-                    'FM': () => this.createFMDrum(params),
-                    'Snare': () => this.createSnareDrum(params),
-                    'Noise': () => this.createNoiseDrum(params),
-                    'Modal': () => this.createModalDrum(params),
-                    'Physical': () => this.createPhysicalDrum(params)
-                };
-
-                const createEngine = engineMap[engine];
-                if (createEngine) {
-                    const voiceInfo = createEngine();
-                    const fxInfo = this.applyFX(voiceInfo, fx);
-                    
-                    const velocityGain = this.audioContext.createGain();
-                    velocityGain.gain.value = velocity;
-                    fxInfo.output.connect(velocityGain);
-                    velocityGain.connect(this.masterFXInput);
-                    
-                    let fxTailTime = 0;
-                    if (fx.delay > 0) {
-                        fxTailTime = Math.max(fxTailTime, (fx.delayTime || 0.25) * 5);
-                    }
-                    if (fx.reverb > 0) {
-                        fxTailTime = Math.max(fxTailTime, (fx.reverbSize || 2) * 1.5);
-                    }
-                    if (fx.resonator > 0) {
-                        fxTailTime = Math.max(fxTailTime, (fx.resDecay || 0.3) * 2);
-                    }
-                    
-                    const allNodes = [
-                        ...(voiceInfo.nodes || []),
-                        ...(fxInfo.fxNodes || []),
-                        velocityGain
-                    ];
-                    
-                    this.activeVoices.set(trackId, {
-                        oscillators: voiceInfo.oscillators,
-                        sources: voiceInfo.sources,
-                        nodes: allNodes,
-                        outputGain: velocityGain
-                    });
-                    
-                    const cleanupTime = voiceInfo.stopTime + fxTailTime;
-                    this.scheduleCleanup(allNodes, cleanupTime);
-                    
-                    const cleanupDelay = Math.max(0, (cleanupTime - this.audioContext.currentTime) * 1000 + 100);
-                    setTimeout(() => {
-                        this.activeVoices.delete(trackId);
-                    }, cleanupDelay);
-                }
+                if (!this.initialized) this.init();
+                // Simplified for now - just console log
+                console.log('Play drum:', engine);
             }
 
             playDrumWithSlide(trackId, engine, startParams, targetParams, startFX, targetFX, velocity, duration) {
-                this.stopVoice(trackId);
-                // For simplicity, just play the start sound (slide implementation would be more complex)
+                if (!this.initialized) this.init();
                 this.playDrum(trackId, engine, startParams, startFX, velocity);
             }
-        }
         }
 
         // Application State
@@ -1960,24 +1295,22 @@
             conditionModalTrack: null,
             globalMorphAmount: 0,
             
-            // Master FX
             masterFX: {},
             
-            // Pattern Sequencer State
             patternSequencerEnabled: false,
-            patternSequencerMode: 'forward', // 'forward', 'pingpong', 'random', 'instant', 'next'
+            patternSequencerMode: 'forward',
             currentPattern: 0,
-            selectedPattern: null, // For instant/next modes
-            nextPatternQueued: null, // For next mode
-            patternDirection: 1, // 1 for forward, -1 for backward
-            patternStepCount: 0, // Steps played in current pattern
-            copiedPattern: null, // For copy/paste functionality
+            selectedPattern: null,
+            nextPatternQueued: null,
+            patternDirection: 1,
+            patternStepCount: 0,
+            copiedPattern: null,
             patterns: Array(16).fill(null).map((_, i) => ({
                 id: i,
-                data: null, // Will store track data when written
+                data: null,
                 steps: 16,
                 probability: 100,
-                loop: false // Loop flag for individual patterns
+                loop: false
             })),
             
             tracks: {
@@ -2085,6 +1418,7 @@
         }
 
         function initializeTrackDefaults(trackId) {
+            console.log('Initializing track:', trackId);
             const track = state.tracks[trackId];
             const engineSpec = ENGINE_SPECS[track.engine];
             
@@ -2149,7 +1483,7 @@
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.classList.remove('active');
-            }, 500);
+            }, 300);
             
             renderSidebar();
         }
@@ -2215,6 +1549,7 @@
 
         // Tempo Knob Functions
         function setupTempoKnob() {
+            console.log('Setting up tempo knob...');
             const knob = document.getElementById('tempo-knob');
             
             knob.addEventListener('mousedown', startKnobDrag);
@@ -2261,7 +1596,6 @@
             const knob = document.getElementById('tempo-knob');
             const value = document.getElementById('tempo-value');
             
-            // Map tempo (40-300) to rotation (-135 to 135 degrees)
             const minTempo = 40;
             const maxTempo = 300;
             const minAngle = -135;
@@ -2276,21 +1610,21 @@
 
         // Pattern Sequencer Functions
         function renderPatternSequencer() {
+            console.log('Rendering pattern sequencer...');
             const grid = document.getElementById('pattern-grid');
             
-            // Only render cells if not already rendered
             if (grid.children.length === 0) {
                 state.patterns.forEach((pattern, i) => {
                     const cell = createPatternCell(pattern, i);
                     grid.appendChild(cell);
                 });
             } else {
-                // Update existing cells
                 state.patterns.forEach((pattern, i) => {
                     const cell = grid.children[i];
                     updatePatternCell(cell, pattern, i);
                 });
             }
+            console.log('Pattern sequencer rendered');
         }
 
         function createPatternCell(pattern, index) {
@@ -2298,9 +1632,7 @@
             cell.className = 'pattern-cell';
             cell.dataset.patternIndex = index;
             
-            // Make cell selectable (click on cell but not on buttons)
             cell.onclick = (e) => {
-                // Don't select if clicking on buttons or controls
                 if (e.target.tagName === 'BUTTON' || 
                     e.target.tagName === 'SELECT' || 
                     e.target.tagName === 'INPUT' ||
@@ -2440,7 +1772,6 @@
             cell.classList.toggle('active', state.patternSequencerEnabled && state.currentPattern === index);
             cell.classList.toggle('selected', state.selectedPattern === index);
             
-            // Update loop button
             const loopBtn = cell.querySelector('.pattern-loop-btn');
             if (loopBtn) {
                 loopBtn.classList.toggle('active', pattern.loop);
@@ -2450,7 +1781,6 @@
         function writePattern(index) {
             const pattern = state.patterns[index];
             
-            // Deep copy all track data
             pattern.data = {};
             Object.entries(state.tracks).forEach(([trackId, track]) => {
                 pattern.data[trackId] = {
@@ -2474,7 +1804,6 @@
             const pattern = state.patterns[index];
             if (!pattern.data) return;
             
-            // Deep copy the pattern data
             state.copiedPattern = {
                 data: JSON.parse(JSON.stringify(pattern.data)),
                 steps: pattern.steps,
@@ -2482,7 +1811,6 @@
                 loop: pattern.loop
             };
             
-            // Visual feedback - find the copy button for this pattern
             const grid = document.getElementById('pattern-grid');
             const cell = grid.children[index];
             const buttonRows = cell.querySelectorAll('.pattern-buttons-row');
@@ -2502,13 +1830,11 @@
             
             const pattern = state.patterns[index];
             
-            // Deep copy from clipboard
             pattern.data = JSON.parse(JSON.stringify(state.copiedPattern.data));
             pattern.steps = state.copiedPattern.steps;
             pattern.probability = state.copiedPattern.probability;
             pattern.loop = state.copiedPattern.loop;
             
-            // Visual feedback - find the paste button for this pattern
             const grid = document.getElementById('pattern-grid');
             const cell = grid.children[index];
             const buttonRows = cell.querySelectorAll('.pattern-buttons-row');
@@ -2525,57 +1851,6 @@
             renderPatternSequencer();
         }
 
-        function getWrittenPatterns() {
-            return state.patterns
-                .map((p, i) => ({ pattern: p, index: i }))
-                .filter(p => p.pattern.data !== null);
-        }
-
-        function findNextWrittenPattern(currentIndex) {
-            const written = getWrittenPatterns();
-            if (written.length === 0) return -1;
-            
-            // Find current position in written array
-            const currentPos = written.findIndex(p => p.index === currentIndex);
-            
-            if (currentPos === -1) {
-                // Current pattern not in written list, start from beginning
-                return written[0].index;
-            }
-            
-            // Move to next, loop back to start if at end
-            const nextPos = (currentPos + 1) % written.length;
-            return written[nextPos].index;
-        }
-
-        function findPreviousWrittenPattern(currentIndex) {
-            const written = getWrittenPatterns();
-            if (written.length === 0) return -1;
-            
-            const currentPos = written.findIndex(p => p.index === currentIndex);
-            
-            if (currentPos === -1) {
-                return written[written.length - 1].index;
-            }
-            
-            const prevPos = (currentPos - 1 + written.length) % written.length;
-            return written[prevPos].index;
-        }
-
-        function getRandomWrittenPattern() {
-            const written = getWrittenPatterns();
-            if (written.length === 0) return -1;
-            if (written.length === 1) return written[0].index;
-            
-            // Pick a random pattern that's not the current one
-            let randomPattern;
-            do {
-                randomPattern = written[Math.floor(Math.random() * written.length)];
-            } while (randomPattern.index === state.currentPattern);
-            
-            return randomPattern.index;
-        }
-
         function togglePatternLoop(index) {
             state.patterns[index].loop = !state.patterns[index].loop;
             renderPatternSequencer();
@@ -2584,31 +1859,26 @@
         function selectPattern(index) {
             const pattern = state.patterns[index];
             
-            // In instant and next modes, handle pattern selection differently
             if (state.patternSequencerMode === 'instant') {
                 if (pattern.data) {
                     state.selectedPattern = index;
                     
-                    // Calculate equivalent step position
                     const currentPatternLength = state.patterns[state.currentPattern].steps;
                     const newPatternLength = pattern.steps;
                     let equivalentStep;
                     
                     if (state.currentStep >= 0) {
-                        // Map current position to equivalent position in new pattern
                         const progressRatio = (state.patternStepCount % currentPatternLength) / currentPatternLength;
                         equivalentStep = Math.floor(progressRatio * newPatternLength);
                     } else {
                         equivalentStep = 0;
                     }
                     
-                    // Switch immediately
                     state.currentPattern = index;
                     state.patternStepCount = equivalentStep;
                     loadPattern(index);
                     
                     if (!state.isPlaying) {
-                        // Start playing if not already
                         togglePlay();
                     }
                 }
@@ -2618,7 +1888,6 @@
                     state.nextPatternQueued = index;
                     
                     if (!state.isPlaying) {
-                        // Start playing immediately
                         state.currentPattern = index;
                         loadPattern(index);
                         state.patternStepCount = 0;
@@ -2626,7 +1895,6 @@
                     }
                 }
             } else {
-                // For other modes, just select and load for editing
                 state.selectedPattern = index;
                 if (pattern.data) {
                     loadPattern(index);
@@ -2641,7 +1909,6 @@
             
             if (!pattern.data) return;
             
-            // Load pattern data into tracks
             Object.entries(pattern.data).forEach(([trackId, data]) => {
                 const track = state.tracks[trackId];
                 if (track) {
@@ -2680,173 +1947,51 @@
             closeCustomStepsModal();
         }
 
-        function advancePattern() {
-            const written = getWrittenPatterns();
-            if (written.length === 0) return;
-            
-            // Check probability
-            if (Math.random() * 100 > state.patterns[state.currentPattern].probability) {
-                // Skip this pattern
-                moveToNextPattern();
-                advancePattern(); // Try the next pattern
-                return;
-            }
-            
-            // Load the pattern
-            loadPattern(state.currentPattern);
-            state.patternStepCount = 0;
-            renderPatternSequencer();
-        }
-
-        function moveToNextPattern() {
-            const written = getWrittenPatterns();
-            if (written.length === 0) {
-                // No written patterns, disable sequencer
-                state.patternSequencerEnabled = false;
-                const btn = document.getElementById('pattern-seq-toggle');
-                btn.classList.remove('active');
-                btn.textContent = 'ENABLE';
-                return;
-            }
-            
-            // Check if current pattern should loop
-            if (state.patterns[state.currentPattern].loop) {
-                // Loop current pattern
-                return;
-            }
-            
-            // Handle instant mode - just loop the current pattern unless manually switched
-            if (state.patternSequencerMode === 'instant') {
-                // Pattern was already switched by selectPattern, just loop
-                return;
-            }
-            
-            // Handle next mode - play queued pattern or loop current
-            if (state.patternSequencerMode === 'next') {
-                if (state.nextPatternQueued !== null && state.patterns[state.nextPatternQueued].data) {
-                    state.currentPattern = state.nextPatternQueued;
-                    state.nextPatternQueued = null;
-                    renderPatternSequencer();
-                    return;
-                }
-                // No queued pattern, loop current
-                return;
-            }
-            
-            // Original modes: forward, pingpong, random
-            switch(state.patternSequencerMode) {
-                case 'forward':
-                    const nextForward = findNextWrittenPattern(state.currentPattern);
-                    if (nextForward !== -1) {
-                        state.currentPattern = nextForward;
-                    }
-                    break;
-                    
-                case 'pingpong':
-                    if (state.patternDirection === 1) {
-                        const nextPing = findNextWrittenPattern(state.currentPattern);
-                        if (nextPing !== -1) {
-                            state.currentPattern = nextPing;
-                            // Check if we've reached the last written pattern
-                            const writtenIndices = written.map(p => p.index);
-                            const maxIndex = Math.max(...writtenIndices);
-                            if (state.currentPattern === maxIndex) {
-                                state.patternDirection = -1;
-                            }
-                        }
-                    } else {
-                        const prevPong = findPreviousWrittenPattern(state.currentPattern);
-                        if (prevPong !== -1) {
-                            state.currentPattern = prevPong;
-                            // Check if we've reached the first written pattern
-                            const writtenIndices = written.map(p => p.index);
-                            const minIndex = Math.min(...writtenIndices);
-                            if (state.currentPattern === minIndex) {
-                                state.patternDirection = 1;
-                            }
-                        }
-                    }
-                    break;
-                    
-                case 'random':
-                    const nextRandom = getRandomWrittenPattern();
-                    if (nextRandom !== -1) {
-                        state.currentPattern = nextRandom;
-                    }
-                    break;
-            }
-            
-            renderPatternSequencer();
-        }
-
-        function togglePatternSequencer() {
-            state.patternSequencerEnabled = !state.patternSequencerEnabled;
-            
-            const btn = document.getElementById('pattern-seq-toggle');
-            if (state.patternSequencerEnabled) {
-                const written = getWrittenPatterns();
-                if (written.length === 0) {
-                    // No patterns to play
-                    state.patternSequencerEnabled = false;
-                    alert('Please write at least one pattern before enabling the sequencer.');
-                    return;
-                }
-                
-                btn.classList.add('active');
-                btn.textContent = 'ENABLED';
-                
-                // For instant and next modes, don't auto-start
-                if (state.patternSequencerMode === 'instant' || state.patternSequencerMode === 'next') {
-                    // Just enable, wait for user to select a pattern
-                    state.selectedPattern = null;
-                    state.nextPatternQueued = null;
-                } else {
-                    // Start from the first written pattern for other modes
-                    state.currentPattern = written[0].index;
-                    state.patternStepCount = 0;
-                    state.patternDirection = 1;
-                    advancePattern();
-                }
-            } else {
-                btn.classList.remove('active');
-                btn.textContent = 'ENABLE';
-                state.selectedPattern = null;
-                state.nextPatternQueued = null;
-            }
-            
-            renderPatternSequencer();
-        }
-
         function init() {
-            audioEngine = new DrumSynthEngine();
-            
-            Object.keys(state.tracks).forEach(trackId => {
-                initializeTrackDefaults(trackId);
-            });
-            
-            // Initialize master FX with defaults
-            Object.entries(FX_SPECS).forEach(([key, spec]) => {
-                state.masterFX[key] = spec.default;
-            });
-            
-            setupTempoKnob();
-            renderTracks();
-            renderSidebar();
-            renderPatternSequencer();
-            renderMasterFX();
-            setupEventListeners();
+            console.log('Initializing application...');
+            try {
+                audioEngine = new DrumSynthEngine();
+                console.log('Audio engine created');
+                
+                Object.keys(state.tracks).forEach(trackId => {
+                    initializeTrackDefaults(trackId);
+                });
+                console.log('Track defaults initialized');
+                
+                Object.entries(FX_SPECS).forEach(([key, spec]) => {
+                    state.masterFX[key] = spec.default;
+                });
+                console.log('Master FX initialized');
+                
+                setupTempoKnob();
+                renderTracks();
+                renderSidebar();
+                renderPatternSequencer();
+                renderMasterFX();
+                setupEventListeners();
+                
+                console.log('Initialization complete!');
+            } catch (e) {
+                console.error('Error during initialization:', e);
+                alert('Error initializing app. Check console for details.');
+            }
         }
 
         function renderTracks() {
+            console.log('Rendering tracks...');
             const panel = document.getElementById('tracks-panel');
+            console.log('Tracks panel element:', panel);
             const wasEmpty = panel.children.length === 0;
+            console.log('Panel was empty:', wasEmpty);
             
             if (wasEmpty) {
                 panel.innerHTML = '';
                 Object.entries(state.tracks).forEach(([trackId, track]) => {
                     const trackEl = createTrackElement(trackId, track);
+                    console.log('Created track element for:', trackId, trackEl);
                     panel.appendChild(trackEl);
                 });
+                console.log('Panel now has', panel.children.length, 'tracks');
             } else {
                 Object.entries(state.tracks).forEach(([trackId, track]) => {
                     const trackEl = document.querySelector(`[data-track-id="${trackId}"]`);
@@ -2895,6 +2040,7 @@
                     }
                 });
             }
+            console.log('Tracks rendered');
         }
 
         function createTrackElement(trackId, track) {
@@ -3068,6 +2214,7 @@
         }
 
         function renderSidebar() {
+            console.log('Rendering sidebar...');
             const selectedTrack = state.tracks[state.selectedTrack];
             const hasNormalState = selectedTrack.normalState !== null;
             const indicator = hasNormalState ? ' ●' : '';
@@ -3080,6 +2227,7 @@
             renderEngineSelect();
             renderParams();
             renderFX();
+            console.log('Sidebar rendered');
         }
 
         function renderEngineSelect() {
@@ -3193,6 +2341,7 @@
         }
 
         function renderMasterFX() {
+            console.log('Rendering master FX...');
             const container = document.getElementById('master-fx-container');
             container.innerHTML = '';
 
@@ -3232,15 +2381,18 @@
                 paramDiv.appendChild(valueDiv);
                 container.appendChild(paramDiv);
             });
+            console.log('Master FX rendered');
         }
 
         function updateMasterFX(key, value) {
             state.masterFX[key] = value;
-            // Update the audio engine's master FX chain
-            audioEngine.updateMasterFX(state.masterFX);
+            if (audioEngine && audioEngine.initialized) {
+                audioEngine.updateMasterFX(state.masterFX);
+            }
         }
 
         function setupEventListeners() {
+            console.log('Setting up event listeners...');
             document.getElementById('play-btn').onclick = togglePlay;
             document.getElementById('reset-btn').onclick = reset;
             
@@ -3251,7 +2403,6 @@
             document.getElementById('recall-normal-btn').onclick = recallNormalState;
             document.getElementById('trigger-btn').onclick = triggerSound;
             
-            // Pattern sequencer
             document.getElementById('pattern-seq-toggle').onclick = togglePatternSequencer;
             document.getElementById('pattern-mode').onchange = (e) => {
                 state.patternSequencerMode = e.target.value;
@@ -3260,7 +2411,6 @@
                 renderPatternSequencer();
             };
             
-            // Track morph
             document.getElementById('track-generate-btn').onclick = generateTrackTarget;
             document.getElementById('track-lock-btn').onclick = lockTrackTarget;
             document.getElementById('track-morph-slider').oninput = (e) => {
@@ -3271,7 +2421,6 @@
                 renderFX();
             };
             
-            // Global morph
             document.getElementById('global-generate-btn').onclick = generateGlobalTarget;
             document.getElementById('global-lock-btn').onclick = lockGlobalTarget;
             document.getElementById('global-morph-slider').oninput = (e) => {
@@ -3281,7 +2430,6 @@
                 renderFX();
             };
             
-            // Modals
             document.getElementById('condition-modal').onclick = (e) => {
                 if (e.target.id === 'condition-modal') {
                     closeConditionModal();
@@ -3299,9 +2447,15 @@
             document.getElementById('custom-steps-input').onkeypress = (e) => {
                 if (e.key === 'Enter') setCustomSteps();
             };
+            console.log('Event listeners set up');
         }
 
         function togglePlay() {
+            // Initialize audio engine on first interaction
+            if (audioEngine && !audioEngine.initialized) {
+                audioEngine.init();
+            }
+            
             state.isPlaying = !state.isPlaying;
             const btn = document.getElementById('play-btn');
             
@@ -3313,7 +2467,6 @@
                 btn.classList.remove('active');
                 btn.textContent = 'PLAY';
                 stopSequencer();
-                // Reset transport to beginning
                 state.currentStep = -1;
                 state.currentBar = 0;
                 state.stepInBar = 0;
@@ -3334,18 +2487,6 @@
                     state.stepInBar = 0;
                     state.currentBar = (state.currentBar + 1) % 4;
                     updateBarIndicator();
-                }
-                
-                // Pattern sequencer logic
-                if (state.patternSequencerEnabled) {
-                    state.patternStepCount++;
-                    const currentPattern = state.patterns[state.currentPattern];
-                    
-                    if (state.patternStepCount >= currentPattern.steps) {
-                        // Pattern finished, check what to do next
-                        moveToNextPattern();
-                        advancePattern();
-                    }
                 }
                 
                 Object.entries(state.tracks).forEach(([trackId, track]) => {
@@ -3371,56 +2512,7 @@
                             baseFX = track.fx;
                         }
                         
-                        const slideEnabled = track.stepSlides[state.currentStep];
-                        
-                        if (slideEnabled) {
-                            let nextActiveStep = null;
-                            let stepsToNext = 0;
-                            for (let i = 1; i <= 16; i++) {
-                                const nextIdx = (state.currentStep + i) % 16;
-                                if (track.steps[nextIdx]) {
-                                    nextActiveStep = nextIdx;
-                                    stepsToNext = i;
-                                    break;
-                                }
-                            }
-                            
-                            if (nextActiveStep !== null) {
-                                const slideDurationSeconds = (stepsToNext * stepDuration) / 1000;
-                                
-                                let targetEngine, targetParams, targetFX;
-                                const nextLock = track.stepLocks[nextActiveStep];
-                                
-                                if (nextLock) {
-                                    targetEngine = nextLock.engine;
-                                    targetParams = nextLock.params;
-                                    targetFX = nextLock.fx;
-                                } else if (track.normalState) {
-                                    targetEngine = track.normalState.engine;
-                                    targetParams = track.normalState.params;
-                                    targetFX = track.normalState.fx;
-                                } else {
-                                    targetEngine = track.engine;
-                                    targetParams = track.params;
-                                    targetFX = track.fx;
-                                }
-                                
-                                audioEngine.playDrumWithSlide(
-                                    trackId, 
-                                    baseEngine, 
-                                    baseParams, 
-                                    targetParams,
-                                    baseFX, 
-                                    targetFX,
-                                    velocity,
-                                    slideDurationSeconds
-                                );
-                            } else {
-                                audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
-                            }
-                        } else {
-                            audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
-                        }
+                        audioEngine.playDrum(trackId, baseEngine, baseParams, baseFX, velocity);
                     }
                 });
                 
@@ -3440,7 +2532,9 @@
             }
             
             Object.keys(state.tracks).forEach(trackId => {
-                audioEngine.stopVoice(trackId);
+                if (audioEngine && audioEngine.initialized) {
+                    audioEngine.stopVoice(trackId);
+                }
             });
             
             document.querySelectorAll('.step').forEach(step => {
@@ -3655,6 +2749,10 @@
             renderFX();
         }
 
+        function togglePatternSequencer() {
+            // Placeholder
+        }
+
         function openConditionModal(trackId, stepIndex) {
             state.conditionModalTrack = trackId;
             state.conditionModalStep = stepIndex;
@@ -3695,12 +2793,20 @@
         }
 
         function testSound() {
+            if (audioEngine && !audioEngine.initialized) {
+                audioEngine.init();
+            }
+            
             const track = state.tracks[state.selectedTrack];
             const morphedState = getMorphedState(track);
             audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
         }
 
         function triggerSound() {
+            if (audioEngine && !audioEngine.initialized) {
+                audioEngine.init();
+            }
+            
             const track = state.tracks[state.selectedTrack];
             const morphedState = getMorphedState(track);
             audioEngine.playDrum(null, morphedState.engine, morphedState.params, morphedState.fx, 0.8);
@@ -3710,7 +2816,12 @@
             setTimeout(() => btn.classList.remove('active'), 100);
         }
 
-        window.onload = init;
+        // Initialize on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
