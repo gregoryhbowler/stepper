@@ -1311,9 +1311,7 @@
             delay: { label: 'Delay', min: 0, max: 1, step: 0.01, default: 0 },
             delayTime: { label: 'Delay Time', min: 0.05, max: 1, step: 0.01, default: 0.25 },
             reverb: { label: 'Reverb', min: 0, max: 1, step: 0.01, default: 0 },
-            reverbSize: { label: 'Reverb Size', min: 0.5, max: 4, step: 0.1, default: 2 },
-            glitch: { label: 'Glitch', min: 0, max: 1, step: 0.01, default: 0 },
-            glitchRate: { label: 'Glitch Rate', min: 0.02, max: 0.5, step: 0.01, default: 0.1 }
+            reverbSize: { label: 'Reverb Size', min: 0.5, max: 4, step: 0.1, default: 2 }
         };
 
         // Audio Engine with FX
@@ -1587,25 +1585,6 @@
                     current = merger;
                 }
                 
-                if (fx.glitch > 0 && Math.random() < fx.glitch) {
-                    const glitchGain = this.audioContext.createGain();
-                    const stutterTime = fx.glitchRate || 0.1;
-                    const repeats = Math.floor(1 + Math.random() * 3);
-                    
-                    glitchGain.gain.setValueAtTime(1, now);
-                    
-                    for (let i = 0; i < repeats; i++) {
-                        const onTime = now + (stutterTime * i * 2);
-                        const offTime = onTime + stutterTime * 0.5;
-                        
-                        glitchGain.gain.setValueAtTime(0, offTime);
-                        glitchGain.gain.setValueAtTime(1, offTime + stutterTime * 0.5);
-                    }
-                    
-                    current.connect(glitchGain);
-                    fxNodes.push(glitchGain);
-                    current = glitchGain;
-                }
                 
                 return { output: current, fxNodes };
             }
@@ -3975,14 +3954,11 @@
                             baseEngine = currentLock.engine;
                             baseParams = currentLock.params;
                             baseFX = currentLock.fx;
-                        } else if (track.normalState) {
-                            baseEngine = track.normalState.engine;
-                            baseParams = track.normalState.params;
-                            baseFX = track.normalState.fx;
                         } else {
-                            baseEngine = track.engine;
-                            baseParams = track.params;
-                            baseFX = track.fx;
+                            const morphedState = getMorphedState(track);
+                            baseEngine = morphedState.engine;
+                            baseParams = morphedState.params;
+                            baseFX = morphedState.fx;
                         }
                         
                         const slideEnabled = track.stepSlides[state.currentStep];
